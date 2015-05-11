@@ -18,12 +18,14 @@
  */
 package org.owasp.dependencytrack.controller;
 
+import java.util.Map;
+
+import lombok.extern.java.Log;
+
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.subject.Subject;
 import org.owasp.dependencytrack.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,20 +33,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Map;
-
 /**
  * Controller logic for all user management related requests.
  *
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
+@Log
 public class UserManagementController extends AbstractController {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserManagementController.class);
 
     /**
      * The Dependency-Track UserService.
@@ -108,7 +104,7 @@ public class UserManagementController extends AbstractController {
         final Subject subject = SecurityUtils.getSubject();
         final String username = (String) SecurityUtils.getSubject().getPrincipal();
         if (!userService.confirmUserPassword(username, currentPassword)) {
-            LOGGER.info("Subject password change failure: " + username);
+            log.info("Subject password change failure: " + username);
             subject.logout();
             return "redirect:/login";
         }
@@ -116,7 +112,7 @@ public class UserManagementController extends AbstractController {
         if (newPassword != null && confirm != null && newPassword.equals(confirm)) {
             final boolean changed = userService.changePassword(username, newPassword);
             if (changed) {
-                LOGGER.info("Subject changed password: " + username);
+                log.info("Subject changed password: " + username);
                 subject.logout();
                 return "redirect:/login";
             }

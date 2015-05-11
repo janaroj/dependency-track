@@ -24,6 +24,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.extern.java.Log;
+
 import org.hibernate.SessionFactory;
 import org.owasp.dependencycheck.Engine;
 import org.owasp.dependencycheck.data.nvdcve.CveDB;
@@ -36,8 +38,6 @@ import org.owasp.dependencytrack.model.ApplicationVersion;
 import org.owasp.dependencytrack.model.LibraryVersion;
 import org.owasp.dependencytrack.model.Vulnerability;
 import org.owasp.dependencytrack.util.DCObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -47,12 +47,8 @@ import org.springframework.stereotype.Repository;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Repository
+@Log
 public class ReportDao {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReportDao.class);
 
     /**
      * Dependency-Check database properties
@@ -78,7 +74,7 @@ public class ReportDao {
             cve.open();
             properties = cve.getDatabaseProperties();
         } catch (DatabaseException ex) {
-            LOGGER.error("Unable to retrieve DB Properties", ex);
+            log.severe("Unable to retrieve DB Properties: " + ex.getMessage());
         } finally {
             if (cve != null) {
                 cve.close();
@@ -124,7 +120,7 @@ public class ReportDao {
             engine.cleanup();
             return baos.toString("UTF-8");
         } catch (Exception e) {
-            LOGGER.error("An error occurred generating a Dependency-Check report: " + e.getMessage());
+            log.severe("An error occurred generating a Dependency-Check report: " + e.getMessage());
         }
         return null;
     }
@@ -140,7 +136,7 @@ public class ReportDao {
             return engine.getDependencies();
         }
         catch (DatabaseException ex) {
-            LOGGER.error("Unable to connect to the dependency-check database", ex);
+            log.severe("Unable to connect to the dependency-check database: " +  ex.getMessage());
             return null;
         } finally {
             Settings.cleanup(true);

@@ -28,6 +28,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.extern.java.Log;
+
 import org.apache.commons.io.IOUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
@@ -41,8 +43,6 @@ import org.owasp.dependencytrack.model.LibraryVersion;
 import org.owasp.dependencytrack.model.License;
 import org.owasp.dependencytrack.model.ScanResult;
 import org.owasp.dependencytrack.tasks.DependencyCheckAnalysisRequestEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -50,12 +50,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
 
 @Repository
+@Log
 public class LibraryVersionDao implements ApplicationEventPublisherAware {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(LibraryVersionDao.class);
 
     /**
      * Event publisher
@@ -497,8 +493,8 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
                     licenses.setText(blob);
                 }
                 catch (IOException e) {
-                    LOGGER.error("An error occurred while adding a license fail to library");
-                    LOGGER.error(e.getMessage());
+                    log.severe("An error occurred while adding a license fail to library");
+                    log.severe(e.getMessage());
                 }
             }
             
@@ -589,8 +585,8 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
                 query.executeUpdate();
             }
         } catch (IOException e) {
-            LOGGER.error("An error occurred while uploading a license");
-            LOGGER.error(e.getMessage());
+            log.severe("An error occurred while uploading a license");
+            log.severe(e.getMessage());
         } finally {
             IOUtils.closeQuietly(licenseInputStream);
         }

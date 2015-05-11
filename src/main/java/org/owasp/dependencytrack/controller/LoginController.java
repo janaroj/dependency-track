@@ -18,24 +18,25 @@
  */
 package org.owasp.dependencytrack.controller;
 
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.subject.Subject;
-import org.owasp.dependencytrack.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.Map;
+
+import lombok.extern.java.Log;
+
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
+import org.owasp.dependencytrack.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Controller logic for all Login-related requests.
@@ -43,12 +44,8 @@ import java.util.Map;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
+@Log
 public class LoginController extends AbstractController {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoginController.class);
 
     /**
      * The Dependency-Track UserService.
@@ -76,13 +73,13 @@ public class LoginController extends AbstractController {
         try {
             SecurityUtils.getSubject().login(token);
 
-            LOGGER.info("Login successful: " + username);
+            log.info("Login successful: " + username);
             if (SecurityUtils.getSubject().isAuthenticated()) {
                 setLdapStatus(request, userService.isLdapUser(username));
                 return "redirect:/dashboard";
             }
         } catch (AuthenticationException e) {
-            LOGGER.info("Login failure: " + username);
+            log.info("Login failure: " + username);
             map.put("authenticationException", true);
         }
         return "loginPage";
@@ -116,7 +113,7 @@ public class LoginController extends AbstractController {
     public String logout(HttpServletRequest request) {
         setLdapStatus(request, false);
         final Subject subject = SecurityUtils.getSubject();
-        LOGGER.info("Logout: " + subject.getPrincipal());
+        log.info("Logout: " + subject.getPrincipal());
         subject.logout();
         return "redirect:/login";
     }

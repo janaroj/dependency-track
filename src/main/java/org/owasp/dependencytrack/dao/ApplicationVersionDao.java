@@ -19,30 +19,19 @@
 
 package org.owasp.dependencytrack.dao;
 
+import java.util.List;
+
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.json.JSONObject;
 import org.owasp.dependencytrack.model.Application;
 import org.owasp.dependencytrack.model.ApplicationDependency;
 import org.owasp.dependencytrack.model.ApplicationVersion;
-import org.owasp.dependencytrack.model.LibraryVersion;
-import org.owasp.dependencytrack.model.ScanResult;
-import org.owasp.dependencytrack.model.Vulnerability;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public class ApplicationVersionDao {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationVersionDao.class);
 
     /**
      * The Hibernate SessionFactory

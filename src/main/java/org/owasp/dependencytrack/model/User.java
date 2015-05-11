@@ -28,8 +28,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "USERS")
+@Data
 public final class User {
 
     /**
@@ -62,7 +65,7 @@ public final class User {
      * Specifies if the username is a pointer to an external LDAP entity
      */
     @Column(name = "ISLDAP")
-    private boolean isldap;
+    private boolean isLdap;
 
     /**
      * The license the library is licensed under.
@@ -72,51 +75,8 @@ public final class User {
     @OrderBy
     private Roles roles;
 
-    public Integer getId() {
-        return id;
+    public void setIsLdap(boolean isLdap) {
+        this.isLdap = isLdap;
     }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public boolean isCheckvalid() {
-        return checkvalid;
-    }
-
-    public void setCheckvalid(boolean checkvalid) {
-        this.checkvalid = checkvalid;
-    }
-
-    public boolean isLdap() {
-        return isldap;
-    }
-
-    public void setIsLdap(boolean isldap) {
-        this.isldap = isldap;
-    }
-
-    public Roles getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Roles roles) {
-        this.roles = roles;
-    }
+    
 }

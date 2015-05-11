@@ -19,6 +19,8 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,10 +30,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import java.util.Date;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "SCANRESULT")
+@Data
 public class ScanResult {
 
     /**
@@ -63,35 +67,4 @@ public class ScanResult {
     @JoinColumn(name = "VULNERABILITYID", nullable = false)
     private Vulnerability vulnerability;
 
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Date getScanDate() {
-        return scanDate;
-    }
-
-    public void setScanDate(Date scanDate) {
-        this.scanDate = scanDate;
-    }
-
-    public LibraryVersion getLibraryVersion() {
-        return libraryVersion;
-    }
-
-    public void setLibraryVersion(LibraryVersion libraryVersion) {
-        this.libraryVersion = libraryVersion;
-    }
-
-    public Vulnerability getVulnerability() {
-        return vulnerability;
-    }
-
-    public void setVulnerability(Vulnerability vulnerability) {
-        this.vulnerability = vulnerability;
-    }
 }

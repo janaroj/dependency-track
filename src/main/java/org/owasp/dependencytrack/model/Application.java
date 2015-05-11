@@ -19,6 +19,8 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,10 +29,12 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import java.util.Set;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "APPLICATION")
+@Data
 public final class Application implements Cloneable {
 
     /**
@@ -59,30 +63,11 @@ public final class Application implements Cloneable {
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final Application obj = new Application();
         obj.setName(this.name);
         return obj;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Set<ApplicationVersion> getVersions() {
-        return this.versions;
     }
 
 }

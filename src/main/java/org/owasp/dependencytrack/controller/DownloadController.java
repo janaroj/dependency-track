@@ -18,23 +18,24 @@
  */
 package org.owasp.dependencytrack.controller;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.owasp.dependencytrack.Constants;
-import org.owasp.dependencytrack.tasks.NistDataMirrorUpdater;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import javax.servlet.http.HttpServletResponse;
+
+import lombok.extern.java.Log;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.owasp.dependencytrack.Constants;
+import org.owasp.dependencytrack.tasks.NistDataMirrorUpdater;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 /**
  * Controller logic for all download-related requests.
@@ -42,13 +43,8 @@ import java.io.OutputStream;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
+@Log
 public class DownloadController extends AbstractController {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadController.class);
-
 
     /**
      * Service to download the Dependency-Check datafile archive.
@@ -68,7 +64,7 @@ public class DownloadController extends AbstractController {
             IOUtils.copy(fis, out);
             out.flush();
         } catch (IOException ex) {
-            LOGGER.info("Error writing Dependency-Check datafile to output stream.");
+            log.info("Error writing Dependency-Check datafile to output stream.");
             throw new RuntimeException("IOError writing file to output stream");
         } finally {
             IOUtils.closeQuietly(out);
@@ -103,7 +99,7 @@ public class DownloadController extends AbstractController {
             IOUtils.copy(fis, out);
             out.flush();
         } catch (IOException ex) {
-            LOGGER.error("Error writing NIST datafile to output stream.");
+            log.severe("Error writing NIST datafile to output stream.");
             throw new RuntimeException("IOError writing file to output stream");
         } finally {
             IOUtils.closeQuietly(out);

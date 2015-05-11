@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
+import lombok.extern.java.Log;
+
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.owasp.dependencycheck.reporting.ReportGenerator;
@@ -34,8 +36,6 @@ import org.owasp.dependencytrack.service.ApplicationVersionService;
 import org.owasp.dependencytrack.service.LibraryVersionService;
 import org.owasp.dependencytrack.service.ReportService;
 import org.owasp.dependencytrack.service.VulnerabilityService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -55,12 +55,8 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
+@Log
 public class ApplicationController extends AbstractController {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationController.class);
 
     /**
      * The Dependency-Track ApplicationService.
@@ -97,7 +93,7 @@ public class ApplicationController extends AbstractController {
      */
     @PostConstruct
     public void init() {
-        LOGGER.info("OWASP Dependency-Track Initialized");
+        log.info("OWASP Dependency-Track Initialized");
     }
 
     /**

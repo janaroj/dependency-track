@@ -18,23 +18,21 @@
  */
 package org.owasp.dependencytrack.controller;
 
+import java.util.Date;
+import java.util.Map;
+
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.owasp.dependencytrack.model.VulnerabilitySummary;
 import org.owasp.dependencytrack.model.VulnerabilityTrend;
 import org.owasp.dependencytrack.service.VulnerabilityService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import java.util.Date;
-import java.util.Map;
 
 /**
  * Controller logic for all Dashboard-related requests.
@@ -43,11 +41,6 @@ import java.util.Map;
  */
 @Controller
 public class DashboardController extends AbstractController {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(DashboardController.class);
 
     /**
      * The Dependency-Track VulnerabilityService.

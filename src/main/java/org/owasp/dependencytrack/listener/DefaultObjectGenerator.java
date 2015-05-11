@@ -18,6 +18,17 @@
  */
 package org.owasp.dependencytrack.listener;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Blob;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import lombok.extern.java.Log;
+
 import org.apache.commons.io.IOUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
@@ -28,22 +39,11 @@ import org.owasp.dependencytrack.model.License;
 import org.owasp.dependencytrack.model.Permissions;
 import org.owasp.dependencytrack.model.Roles;
 import org.owasp.dependencytrack.model.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Blob;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -52,12 +52,8 @@ import java.util.Map;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Component
+@Log
 public class DefaultObjectGenerator implements ApplicationListener<ContextRefreshedEvent> {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultObjectGenerator.class);
 
     /**
      * Specify default license names and files
@@ -151,9 +147,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
             loadDefaultRoles();
             loadDefaultUsers();
         } catch (IOException e) {
-            if (LOGGER.isWarnEnabled()) {
-                LOGGER.warn(e.getMessage());
-            }
+            log.warning(e.getMessage());
         }
     }
 
@@ -172,9 +166,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
             return;
         }
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Adding default licenses to datastore.");
-        }
+        log.info("Adding default licenses to datastore.");
         for (Map.Entry<String, String> entry : LICENSES.entrySet()) {
             session.beginTransaction();
 
@@ -197,9 +189,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
                 final Blob blob = Hibernate.createBlob(inputStream);
                 license.setText(blob);
                 session.save(license);
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info("Added: " + licenseName);
-                }
+                log.info("Added: " + licenseName);
             } finally {
                 IOUtils.closeQuietly(inputStream);
             }
@@ -221,9 +211,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
             return;
         }
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Adding default permissions to datastore.");
-        }
+        log.info("Adding default permissions to datastore.");
 
         session.beginTransaction();
         for (Map.Entry<String, Roles.ROLE> entry : PERMISSIONS.entrySet()) {
@@ -248,9 +236,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
             return;
         }
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Adding default roles to datastore.");
-        }
+        log.info("Adding default roles to datastore.");
 
         // Retrieve a list of all persisted permissions
         final Query query = session.createQuery("FROM Permissions");
@@ -315,9 +301,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
             return;
         }
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Adding default users to datastore.");
-        }
+        log.info("Adding default users to datastore.");
 
         session.beginTransaction();
 

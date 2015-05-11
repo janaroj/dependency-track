@@ -26,10 +26,12 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "APPLICATIONVERSION")
+@Data
 public final class ApplicationVersion implements Cloneable {
 
     /**
@@ -65,6 +67,7 @@ public final class ApplicationVersion implements Cloneable {
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final ApplicationVersion obj = new ApplicationVersion();
         obj.setApplication(this.application);
@@ -73,35 +76,4 @@ public final class ApplicationVersion implements Cloneable {
         return obj;
     }
 
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public Application getApplication() {
-        return application;
-    }
-
-    public void setApplication(Application application) {
-        this.application = application;
-    }
-
-    public Integer getVulnCount() {
-        return vulnCount;
-    }
-
-    public void setVulnCount(Integer vulnCount) {
-        this.vulnCount = vulnCount;
-    }
 }

@@ -19,6 +19,9 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,11 +30,12 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "LIBRARYVENDOR")
+@Data
 public final class LibraryVendor implements Cloneable {
 
     /**
@@ -59,34 +63,11 @@ public final class LibraryVendor implements Cloneable {
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final LibraryVendor obj = new LibraryVendor();
         obj.setVendor(this.vendor);
         return obj;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getVendor() {
-        return vendor;
-    }
-
-    public void setVendor(String vendor) {
-        this.vendor = vendor;
-    }
-
-    public Set<Library> getLibraries() {
-        return libraries;
-    }
-
-    public void setLibraries(Set<Library> libraries) {
-        this.libraries = libraries;
     }
 
     /**

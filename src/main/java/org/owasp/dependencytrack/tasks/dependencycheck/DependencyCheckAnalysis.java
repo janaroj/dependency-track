@@ -31,6 +31,8 @@ import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 
+import lombok.extern.java.Log;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.staxmate.SMInputFactory;
@@ -53,8 +55,6 @@ import org.owasp.dependencytrack.model.ScanResult;
 import org.owasp.dependencytrack.model.Vulnerability;
 import org.owasp.dependencytrack.tasks.DependencyCheckAnalysisRequestEvent;
 import org.owasp.dependencytrack.util.XmlUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
@@ -71,12 +71,8 @@ import org.xml.sax.SAXException;
  */
 @Service
 @Transactional
+@Log
 public class DependencyCheckAnalysis implements ApplicationListener<DependencyCheckAnalysisRequestEvent> {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(DependencyCheckAnalysis.class);
 
     /**
      * The Hibernate SessionFactory
@@ -136,7 +132,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             try {
                 analyzeResults();
             } catch (SAXException | IOException e) {
-                LOGGER.error("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
+                log.severe("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
             }
         }
         checkForUpdates(libraryVersions);
@@ -151,7 +147,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
      * @return true if scan was successful, false if scan failed for some reason
      */
     private synchronized boolean performAnalysis(List<LibraryVersion> libraryVersions) {
-        LOGGER.info("Executing Dependency-Check Task");
+        log.info("Executing Dependency-Check Task");
 
         // iterate through the libraries, create evidence and create the resulting dependency
         final List<Dependency> dependencies = new ArrayList<>();
@@ -171,7 +167,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             dependencies.add(dependency);
         }
 
-        LOGGER.info("Performing Dependency-Check analysis against " + dependencies.size() + " component(s)");
+        log.info("Performing Dependency-Check analysis against " + dependencies.size() + " component(s)");
 
         final DependencyCheckScanAgent scanAgent = new DependencyCheckScanAgent();
         scanAgent.setConnectionString("jdbc:h2:file:%s;FILE_LOCK=SERIALIZED;AUTOCOMMIT=ON;");
@@ -194,10 +190,10 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             scanAgent.execute();
             success = true;
         } catch (ScanAgentException e) {
-            LOGGER.error("An error occurred executing Dependency-Check scan agent: " + e.getMessage());
+            log.severe("An error occurred executing Dependency-Check scan agent: " + e.getMessage());
         }
 
-        LOGGER.info("Dependency-Check analysis complete");
+        log.info("Dependency-Check analysis complete");
         return success;
     }
 
@@ -398,7 +394,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     }
 
     private void checkForUpdates(List<LibraryVersion> libraryVersions) {
-        LOGGER.info("Checking for latest library versions");
+        log.info("Checking for latest library versions");
         for (LibraryVersion libraryVersion : libraryVersions) {
             Library lib = libraryVersion.getLibrary();
             String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
@@ -407,7 +403,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
                 commitLibraryData(lib);
             }
         }
-        LOGGER.info("Latest library versions updated");
+        log.info("Latest library versions updated");
     }
 
     @SuppressWarnings("unchecked")

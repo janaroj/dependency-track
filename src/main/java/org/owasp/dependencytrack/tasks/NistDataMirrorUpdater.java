@@ -18,12 +18,6 @@
  */
 package org.owasp.dependencytrack.tasks;
 
-import org.apache.commons.io.IOUtils;
-import org.owasp.dependencytrack.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -33,11 +27,18 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Calendar;
 
+import lombok.extern.java.Log;
+
+import org.apache.commons.io.IOUtils;
+import org.owasp.dependencytrack.Constants;
+import org.springframework.scheduling.annotation.Scheduled;
+
 /**
  * Performs a complete download of all NIST CVE data and provides access
  * to the sources via an internal mirror.
  * @author Steve Springett (steve.springett@owasp.org)
  */
+@Log
 public class NistDataMirrorUpdater {
 
     /**
@@ -71,12 +72,6 @@ public class NistDataMirrorUpdater {
     private static final int END_YEAR = Calendar.getInstance().get(Calendar.YEAR);
 
     /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(NistDataMirrorUpdater.class);
-
-
-    /**
      * Updates the NIST data directory.
      */
     @Scheduled(fixedRate = 86400000) // every 24 hours
@@ -91,7 +86,7 @@ public class NistDataMirrorUpdater {
                 doDownload(cve20BaseUrl);
             }
         } catch (IOException e) {
-            LOGGER.warn("An error occurred during the NIST data mirror update process: " + e.getMessage());
+            log.warning("An error occurred during the NIST data mirror update process: " + e.getMessage());
         }
     }
 
@@ -107,9 +102,7 @@ public class NistDataMirrorUpdater {
         try {
             final URL url = new URL(cveUrl);
             final URLConnection urlConnection = url.openConnection();
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Downloading " + url.toExternalForm());
-            }
+            log.info("Downloading " + url.toExternalForm());
 
             String filename = url.getFile();
             filename = filename.substring(filename.lastIndexOf('/') + 1);
@@ -129,9 +122,7 @@ public class NistDataMirrorUpdater {
                 bos.write(i);
             }
         } catch (IOException e) {
-            if (LOGGER.isWarnEnabled()) {
-                LOGGER.warn("An error occurred during the download or saving of NIST XML data: " + e.getMessage());
-            }
+            log.warning("An error occurred during the download or saving of NIST XML data: " + e.getMessage());
         } finally {
             IOUtils.closeQuietly(bis);
             IOUtils.closeQuietly(bos);

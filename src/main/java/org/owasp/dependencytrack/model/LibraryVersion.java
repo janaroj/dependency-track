@@ -19,6 +19,8 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.UUID;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -28,11 +30,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import java.beans.Transient;
-import java.util.UUID;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "LIBRARYVERSION")
+@Data
 public final class LibraryVersion implements Cloneable {
 
     /**
@@ -87,6 +90,7 @@ public final class LibraryVersion implements Cloneable {
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final LibraryVersion obj = new LibraryVersion();
         obj.setLibrary(this.library);
@@ -98,63 +102,8 @@ public final class LibraryVersion implements Cloneable {
         return obj;
     }
 
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getLibraryversion() {
-        return libraryversion;
-    }
-
-    public void setLibraryversion(String libraryversion) {
-        this.libraryversion = libraryversion;
-    }
-
-    public Library getLibrary() {
-        return library;
-    }
-
-    public void setLibrary(Library library) {
-        this.library = library;
-    }
-
-    public String getSha1() {
-        return sha1;
-    }
-
-    public void setSha1(String sha1) {
-        this.sha1 = sha1;
-    }
-
-    public String getMd5() {
-        return md5;
-    }
-
-    public void setMd5(String md5) {
-        this.md5 = md5;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     public String getUndashedUuid() {
         return uuid.replace("-", "");
     }
-
-    public Integer getVulnCount() {
-        return vulnCount;
-    }
-
-    public void setVulnCount(Integer vulnCount) {
-        this.vulnCount = vulnCount;
-    }
+    
 }

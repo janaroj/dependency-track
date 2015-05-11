@@ -18,22 +18,6 @@
  */
 package org.owasp.dependencytrack.controller;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.owasp.dependencytrack.model.Application;
-import org.owasp.dependencytrack.model.Library;
-import org.owasp.dependencytrack.model.LibraryVersion;
-import org.owasp.dependencytrack.model.License;
-import org.owasp.dependencytrack.service.LibraryVersionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,18 +25,31 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletResponse;
+
+import lombok.extern.java.Log;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.owasp.dependencytrack.model.LibraryVersion;
+import org.owasp.dependencytrack.model.License;
+import org.owasp.dependencytrack.service.LibraryVersionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
 /**
  * Controller logic for all Library-related requests.
  *
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
+@Log
 public class LibraryController extends AbstractController {
-
-    /**
-     * Setup logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(LibraryController.class);
 
     /**
      * The Dependency-Track LibraryVersionService.
@@ -172,8 +169,8 @@ public class LibraryController extends AbstractController {
             IOUtils.copy(in, out);
             out.flush();
         } catch (IOException | SQLException e) {
-            LOGGER.error("An error occurred downloading a license");
-            LOGGER.error(e.getMessage());
+            log.severe("An error occurred downloading a license");
+            log.severe(e.getMessage());
         } finally {
             IOUtils.closeQuietly(in);
             IOUtils.closeQuietly(out);
@@ -207,8 +204,8 @@ public class LibraryController extends AbstractController {
                 IOUtils.copy(in, out);
                 out.flush();
             } catch (IOException | SQLException e) {
-                LOGGER.error("An error occurred while viewing a license");
-                LOGGER.error(e.getMessage());
+                log.severe("An error occurred while viewing a license");
+                log.severe(e.getMessage());
             } finally {
                 IOUtils.closeQuietly(in);
                 IOUtils.closeQuietly(out);

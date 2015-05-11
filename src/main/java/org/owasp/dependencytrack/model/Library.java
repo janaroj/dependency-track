@@ -32,8 +32,11 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "LIBRARY")
+@Data
 public final class Library implements Cloneable {
 
     /**
@@ -98,63 +101,6 @@ public final class Library implements Cloneable {
         obj.setLicense(this.license);
 
         return obj;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getLibraryname() {
-        return libraryname;
-    }
-
-    public void setLibraryname(String libraryname) {
-        this.libraryname = libraryname;
-    }
-
-    public License getLicense() {
-        return license;
-    }
-
-    public void setLicense(License license) {
-        this.license = license;
-    }
-
-
-    public LibraryVendor getLibraryVendor() {
-        return libraryVendor;
-    }
-
-    public void setLibraryVendor(LibraryVendor libraryVendor) {
-        this.libraryVendor = libraryVendor;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public Set<LibraryVersion> getVersions() {
-        return versions;
-    }
-
-    public void setVersions(Set<LibraryVersion> versions) {
-        this.versions = versions;
-    }
-
-    public String getLatestLibraryVersion() {
-        return latestLibraryVersion;
-    }
-
-    public void setLatestLibraryVersion(String latestLibraryVersion) {
-        this.latestLibraryVersion = latestLibraryVersion;
     }
     
 }

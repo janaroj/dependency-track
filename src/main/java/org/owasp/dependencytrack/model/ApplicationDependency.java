@@ -27,8 +27,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "APPLICATIONDEPENDENCY")
+@Data
 public final class ApplicationDependency implements Cloneable {
 
     /**
@@ -57,35 +60,12 @@ public final class ApplicationDependency implements Cloneable {
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final ApplicationDependency obj = new ApplicationDependency();
         obj.setLibraryVersion(this.libraryVersion);
         obj.setApplicationVersion(this.applicationVersion);
         return obj;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public LibraryVersion getLibraryVersion() {
-        return libraryVersion;
-    }
-
-    public void setLibraryVersion(LibraryVersion libraryVersion) {
-        this.libraryVersion = libraryVersion;
-    }
-
-    public ApplicationVersion getApplicationVersion() {
-        return applicationVersion;
-    }
-
-    public void setApplicationVersion(ApplicationVersion applicationVersion) {
-        this.applicationVersion = applicationVersion;
     }
 
 }

@@ -19,6 +19,9 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,11 +33,12 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "ROLES")
+@Data
 public class Roles {
 
     /**
@@ -109,40 +113,6 @@ public class Roles {
      */
     public Roles(String rolename) {
           role = rolename;
-    }
-
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    //todo why is this shortened? Change it to User - also do Permissions
-    public Set<User> getUsr() {
-        return usr;
-    }
-
-    public void setUsr(Set<User> usr) {
-        this.usr = usr;
-    }
-
-    public Set<Permissions> getPerm() {
-        return perm;
-    }
-
-    public void setPerm(Set<Permissions> perm) {
-        this.perm = perm;
     }
 
 }

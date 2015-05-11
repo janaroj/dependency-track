@@ -19,21 +19,22 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.sql.Blob;
+import java.sql.Clob;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.util.Set;
+
+import lombok.Data;
 
 @Entity
 @Table(name = "LICENSES")
+@Data
 public final class License implements Cloneable {
 
     /**
@@ -81,6 +82,7 @@ public final class License implements Cloneable {
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final License obj = new License();
         obj.setLicensename(this.licensename);
@@ -89,54 +91,6 @@ public final class License implements Cloneable {
         obj.setFilename(this.filename);
         obj.setContenttype(this.contenttype);
         return obj;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getLicensename() {
-        return licensename;
-    }
-
-    public void setLicensename(String licensename) {
-        this.licensename = licensename;
-    }
-
-    public Blob getText() {
-        return text;
-    }
-
-    public void setText(Blob text) {
-        this.text = text;
-    }
-
-    public Clob getUrl() {
-        return url;
-    }
-
-    public void setUrl(Clob url) {
-        this.url = url;
-    }
-
-    public String getFilename() {
-        return filename;
-    }
-
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
-    public String getContenttype() {
-        return contenttype;
-    }
-
-    public void setContenttype(String contenttype) {
-        this.contenttype = contenttype;
     }
 
 }

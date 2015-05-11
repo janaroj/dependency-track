@@ -19,6 +19,9 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -26,12 +29,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
+
+import lombok.Data;
 
 
 @Entity
 @Table(name = "PERMISSIONS")
+@Data
 public class Permissions {
     /**
      * The unique identifier of the persisted object.
@@ -64,30 +68,6 @@ public class Permissions {
      */
     public Permissions(String permissionname) {
         this.permissionname = permissionname;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getPermissionname() {
-        return permissionname;
-    }
-
-    public void setPermissionname(String permissionname) {
-        this.permissionname = permissionname;
-    }
-
-    public Set<Roles> getMaprole() {
-        return maprole;
-    }
-
-    public void setMaprole(Set<Roles> maprole) {
-        this.maprole = maprole;
     }
 
 }

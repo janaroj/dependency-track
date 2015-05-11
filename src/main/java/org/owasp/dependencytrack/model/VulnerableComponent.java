@@ -22,9 +22,12 @@ package org.owasp.dependencytrack.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Data;
+
 /**
  * This is a non-persistent convenience class.
  */
+@Data
 public class VulnerableComponent {
 
     private LibraryVersion libraryVersion;
@@ -32,30 +35,6 @@ public class VulnerableComponent {
     private ScanResult scanResult;
 
     private List<Vulnerability> vulnerabilities = new ArrayList<>();
-
-    public LibraryVersion getLibraryVersion() {
-        return libraryVersion;
-    }
-
-    public void setLibraryVersion(LibraryVersion libraryVersion) {
-        this.libraryVersion = libraryVersion;
-    }
-
-    public ScanResult getScanResult() {
-        return scanResult;
-    }
-
-    public void setScanResult(ScanResult scanResult) {
-        this.scanResult = scanResult;
-    }
-
-    public List<Vulnerability> getVulnerabilities() {
-        return vulnerabilities;
-    }
-
-    public void setVulnerabilities(List<Vulnerability> vulnerabilities) {
-        this.vulnerabilities = vulnerabilities;
-    }
 
     public void addVulnerability(Vulnerability vulnerability) {
         vulnerabilities.add(vulnerability);
