@@ -23,11 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * This is a non-persistent convenience class.
  */
 @Data
+@EqualsAndHashCode(exclude = {"vulnerabilities"})
 public class VulnerableComponent {
 
     private LibraryVersion libraryVersion;

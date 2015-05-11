@@ -31,11 +31,13 @@ import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 
 @Entity
 @Table(name = "PERMISSIONS")
 @Data
+@EqualsAndHashCode(exclude = {"maprole"})
 public class Permissions {
     /**
      * The unique identifier of the persisted object.

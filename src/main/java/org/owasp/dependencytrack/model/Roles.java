@@ -35,10 +35,12 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "ROLES")
 @Data
+@EqualsAndHashCode(exclude = {"usr", "perm"})
 public class Roles {
 
     /**

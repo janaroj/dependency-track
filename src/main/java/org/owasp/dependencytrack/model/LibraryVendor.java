@@ -32,10 +32,12 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "LIBRARYVENDOR")
 @Data
+@EqualsAndHashCode(exclude = {"libraries"})
 public final class LibraryVendor implements Cloneable {
 
     /**
