@@ -17,6 +17,7 @@
                 <th><spring:message code="label.vendor"/></th>
                 <th><spring:message code="label.library"/></th>
                 <th><spring:message code="label.version"/></th>
+                <th><spring:message code="label.latest.version"/></th>
                 <th><spring:message code="label.license"/></th>
                 <th><spring:message code="label.cves"/></th>
                 <shiro:hasPermission name="${deleteDependency}">
@@ -30,6 +31,7 @@
                 <td style="vertical-align:middle;"><e:forHtmlContent value="${libraryVersion.library.libraryVendor.vendor}"/></td>
                 <td style="vertical-align:middle;"><e:forHtmlContent value="${libraryVersion.library.libraryname}"/></td>
                 <td style="vertical-align:middle;"><e:forHtmlContent value="${libraryVersion.libraryversion}"/></td>
+                <td style="vertical-align:middle;"><e:forHtmlContent value="${libraryVersion.library.latestLibraryVersion}"/></td>
                 <td style="vertical-align:middle;"><e:forHtmlContent value="${libraryVersion.library.license.licensename}"/></td>
                 <td style="vertical-align:middle;"><span class="badge <c:if test="${libraryVersion.vulnCount > 0}">badge-important</c:if>"><e:forHtmlContent value="${libraryVersion.vulnCount}"/></span></td>
                 <shiro:hasPermission name="${deleteDependency}">
@@ -43,6 +45,29 @@
             </tbody>
         </table>
     </c:if>
+</div>
+
+<div id="importDependencyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="importDependencyModalLabel" aria-hidden="true">
+	<div class="modal-header">
+        <h4 id="importDependencyModalLabel"><spring:message code="label.dependency.import"/></h4>
+    </div>
+    
+    <c:url value="/importApplicationDependencies" var="importApplicationUrl"/>
+    <form:form id="importDependencyForm" style="margin-bottom:0" action="${importApplicationUrl}" method="post" autocomplete="off" enctype="multipart/form-data">
+        <div class="modal-body">
+            <table>
+                <tr>
+                    <td><label for="importFile"><spring:message code="label.import.path"/></label></td>
+                    <td><input id="importFile" name="importFile" type="file" autofocus="autofocus" required="required"/></td>
+                </tr>
+            </table>
+			<input type="hidden" id="addappversionid" name="appversionid" value="${applicationVersion.id}"/>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true"><spring:message code="label.close"/></button>
+            <button class="modalSubmit btn btn-primary"><spring:message code="label.import"/></button>
+        </div>
+    </form:form>
 </div>
 
 <div id="addDependencyModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addDependencyModalLabel" aria-hidden="true">

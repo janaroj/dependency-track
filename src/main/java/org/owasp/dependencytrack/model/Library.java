@@ -19,6 +19,8 @@
 
 package org.owasp.dependencytrack.model;
 
+import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -29,7 +31,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import java.util.Set;
 
 @Entity
 @Table(name = "LIBRARY")
@@ -77,11 +78,18 @@ public final class Library implements Cloneable {
      */
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "library")
     private Set<LibraryVersion> versions;
+    
+    /**
+     * The String representation of the latest version of the library (i.e. 1.3.0).
+     */
+    @Column(name = "LATESTLIBRARYVERSION")
+    private String latestLibraryVersion;
 
     /**
      * Clones this specific object (minus the objects id).
      * @return a New object
      */
+    @Override
     public Object clone() {
         final Library obj = new Library();
         obj.setLanguage(this.language);
@@ -140,4 +148,13 @@ public final class Library implements Cloneable {
     public void setVersions(Set<LibraryVersion> versions) {
         this.versions = versions;
     }
+
+    public String getLatestLibraryVersion() {
+        return latestLibraryVersion;
+    }
+
+    public void setLatestLibraryVersion(String latestLibraryVersion) {
+        this.latestLibraryVersion = latestLibraryVersion;
+    }
+    
 }

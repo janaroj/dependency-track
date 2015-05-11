@@ -18,14 +18,25 @@
  */
 package org.owasp.dependencytrack.tasks.dependencycheck;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.staxmate.SMInputFactory;
 import org.codehaus.staxmate.in.SMHierarchicCursor;
 import org.codehaus.staxmate.in.SMInputCursor;
 import org.hibernate.Query;
-import org.hibernate.SessionFactory;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.owasp.dependencycheck.agent.DependencyCheckScanAgent;
 import org.owasp.dependencycheck.dependency.Confidence;
 import org.owasp.dependencycheck.dependency.Dependency;
@@ -47,16 +58,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
-
-import javax.xml.stream.XMLStreamException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 
 
 /**
@@ -96,6 +97,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onApplicationEvent(DependencyCheckAnalysisRequestEvent event) {
         final List<LibraryVersion> libraryVersions = event.getLibraryVersions();
         if (libraryVersions == null || libraryVersions.size() == 0) {
@@ -133,6 +135,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
                 LOGGER.error("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
             }
         }
+        checkForUpdates(libraryVersions);
         if (!sessionFactory.isClosed()) {
             sessionFactory.close();
         }
@@ -390,4 +393,18 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         return new Vulnerability();
     }
 
+    private void checkForUpdates(List<LibraryVersion> libraryVersions) {
+        for (LibraryVersion libraryVersion : libraryVersions) {
+            Library lib = libraryVersion.getLibrary();
+            String query = "https://search.maven.org/solrsearch/select?q=g:%22" + lib.getLibraryVendor().getVendor() + "%22+AND+a:%22"
+                    + lib.getLibraryname() + "%22&core&rows=20&wt=json";
+            lib.setLatestLibraryVersion("1.0.RELEASE");
+            commitLibraryData(lib);
+        }
+    }
+    
+    private void commitLibraryData(Library library) {
+        final Session session = sessionFactory.getCurrentSession();
+        session.save(library);
+    }
 }

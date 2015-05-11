@@ -15,6 +15,7 @@
                 <th><spring:message code="label.vendor"/></th>
                 <th><spring:message code="label.name"/></th>
                 <th><spring:message code="label.version"/></th>
+                <th><spring:message code="label.latest.version"/></th>
                 <th><spring:message code="label.license"/></th>
                 <th><spring:message code="label.language"/></th>
                 <shiro:hasPermission name="${updatelibrary}">
@@ -28,6 +29,7 @@
                     <td><e:forHtmlContent value="${libList.library.libraryVendor.vendor}"/></td>
                     <td><e:forHtmlContent value="${libList.library.libraryname}"/></td>
                     <td><e:forHtmlContent value="${libList.libraryversion}"/></td>
+                    <td><e:forHtmlContent value="${libList.library.latestLibraryVersion}"/></td>
                     <td><a data-toggle="modal" class="open-LicenseLibrariesModal" data-licensefiletype ="${libList.library.license.contenttype}" data-licenseid ="${libList.library.license.id}" data-licensename ="${libList.library.license.licensename}" data-licensfileename ="${libList.library.license.filename}" href="#licenseLibrariesModal"><e:forHtmlContent value="${libList.library.license.licensename}"/></a></td>
                     <td><e:forHtmlContent value="${libList.library.language}"/></td>
                     <shiro:hasPermission name="${updatelibrary}">
