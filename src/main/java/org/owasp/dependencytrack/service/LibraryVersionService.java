@@ -19,6 +19,9 @@
 
 package org.owasp.dependencytrack.service;
 
+import java.util.List;
+
+import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencytrack.dao.LibraryVersionDao;
 import org.owasp.dependencytrack.model.ApplicationVersion;
 import org.owasp.dependencytrack.model.Library;
@@ -29,8 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Service
 public class LibraryVersionService {
@@ -114,9 +115,12 @@ public class LibraryVersionService {
     }
 
     @Transactional
-    public void addLibraries(String libraryname, String libraryversion, String vendor, String license, MultipartFile file, String language) {
-
-        libraryVersionDao.addLibraries(libraryname, libraryversion, vendor,  license,  file,  language);
+    public Integer addLibraries(String libraryName, String libraryVersion, String vendor, String license, MultipartFile file, String language) {
+        LibraryVersion library = libraryVersionDao.getLibrary(libraryName, libraryVersion, vendor);
+        if (library == null) {
+            return libraryVersionDao.addLibraries(libraryName, libraryVersion, vendor,  license,  file,  language);
+        }
+        return library.getId();
     }
 
     @Transactional
@@ -127,6 +131,20 @@ public class LibraryVersionService {
     @Transactional
     public List<LibraryVersion> keywordSearchLibraries(String searchTerm) {
         return libraryVersionDao.keywordSearchLibraries(searchTerm);
+    }
+    
+    @Transactional
+    public void addDependenciesToApplication(List<Dependency> dependencies, int appVersionId) {
+        for (Dependency dependency : dependencies) {
+            if (dependency.getIdentifiers().size() == 1) {
+                String[] identifierParts = dependency.getIdentifiers().iterator().next().getValue().split(":");
+                Integer libVersionId = addLibraries(identifierParts[1], identifierParts[2], identifierParts[0], "UNKNOWN", null, null);
+                addDependency(appVersionId, libVersionId);
+            }
+            else {
+                System.out.println("DEBUG HERE - WHAT TO DO WHEN MULTIPLE OR NO IDENTIFIERS?");
+            }
+        }
     }
 
 }

@@ -19,11 +19,17 @@
 
 package org.owasp.dependencytrack.dao;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hibernate.SessionFactory;
 import org.owasp.dependencycheck.Engine;
 import org.owasp.dependencycheck.data.nvdcve.CveDB;
 import org.owasp.dependencycheck.data.nvdcve.DatabaseException;
 import org.owasp.dependencycheck.data.nvdcve.DatabaseProperties;
+import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.reporting.ReportGenerator;
 import org.owasp.dependencycheck.utils.Settings;
 import org.owasp.dependencytrack.model.ApplicationVersion;
@@ -34,10 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class will dynamically generate native Dependency-Check reports.
@@ -125,6 +127,27 @@ public class ReportDao {
             LOGGER.error("An error occurred generating a Dependency-Check report: " + e.getMessage());
         }
         return null;
+    }
+    
+    public List<Dependency> getDependencies(File file) {
+        Engine engine = null;
+        Settings.initialize();
+        initializeProperties();
+        try {
+            engine = new Engine(this.getClass().getClassLoader());
+            engine.scan(file);
+            engine.analyzeDependencies();
+            return engine.getDependencies();
+        }
+        catch (DatabaseException ex) {
+            LOGGER.error("Unable to connect to the dependency-check database", ex);
+            return null;
+        } finally {
+            Settings.cleanup(true);
+            if (engine != null) {
+                engine.cleanup();
+            }
+        }
     }
 
 }

@@ -18,6 +18,12 @@
  */
 package org.owasp.dependencytrack.controller;
 
+import java.io.IOException;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.owasp.dependencycheck.reporting.ReportGenerator;
@@ -42,10 +48,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
 
 /**
  * Controller logic for all Application-related requests.
@@ -207,6 +209,21 @@ public class ApplicationController extends AbstractController {
                                          @RequestParam("keywordSearchVendor") String searchTerm) {
         map.put("libList", libraryVersionService.keywordSearchLibraries(searchTerm));
         return "librariesPage";
+    }
+    
+    /**
+     * Imports ApplicationDependencies for the specified ApplicationVersion.
+     *
+     * @param appversionid The ID of the ApplicationVersion
+     * @return a String
+     * @throws IOException 
+     * @throws IllegalStateException 
+     */
+    @RequiresPermissions("addDependency")
+    @RequestMapping(value = "/importApplicationDependencies", method = RequestMethod.POST)
+    public String importApplicationDependencies(@RequestParam("appversionid") int appversionid, @RequestParam("importFile") MultipartFile file) {
+        libraryVersionService.addDependenciesToApplication(reportService.getDependencies(file), appversionid);
+        return "redirect:/applicationVersion/" + appversionid;
     }
 
     /**

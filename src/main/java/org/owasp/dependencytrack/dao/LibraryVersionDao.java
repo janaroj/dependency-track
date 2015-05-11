@@ -18,6 +18,16 @@
  */
 package org.owasp.dependencytrack.dao;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.sql.Blob;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.commons.io.IOUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
@@ -38,15 +48,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Blob;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.UUID;
 
 @Repository
 public class LibraryVersionDao implements ApplicationEventPublisherAware {
@@ -455,14 +456,15 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
     /**
      * Add a Library + LibraryVersion.
      *
-     * @param libraryname    The name of the Library
+     * @param libraryName    The name of the Library
      * @param libraryversion The version of the Library
      * @param vendor         The vendor of the Library
      * @param license        The license the Library is licensed under
      * @param file           The license file
      * @param language       The programming language the library was written in
+     * @return 
      */
-    public void addLibraries(String libraryname, String libraryversion, String vendor,
+    public int addLibraries(String libraryName, String libraryversion, String vendor,
                              String license, MultipartFile file, String language) {
         LibraryVendor libraryVendor;
         License licenses;
@@ -480,46 +482,42 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         } else {
             libraryVendor = (LibraryVendor) query.list().get(0);
         }
-
+        
         query = session.createQuery("from License where upper(licensename) =upper(:license) ");
         query.setParameter("license", license);
 
-
-        if (query.list().isEmpty()) {
+        if (query.list().isEmpty() && file != null) {
             licenses = new License();
 
-            InputStream licenseInputStream = null;
-            try {
-                licenseInputStream = file.getInputStream();
-                final Blob blob = Hibernate.createBlob(licenseInputStream);
-
-                licenses.setFilename(file.getOriginalFilename());
-                licenses.setContenttype(file.getContentType());
-                licenses.setLicensename(license);
-                licenses.setText(blob);
-                session.save(licenses);
-
-            } catch (IOException e) {
-                LOGGER.error("An error occurred while adding a library with library version");
-                LOGGER.error(e.getMessage());
-            } finally {
-                IOUtils.closeQuietly(licenseInputStream);
+            if (file != null) {
+                try (InputStream licenseInputStream = file.getInputStream()) {
+                    final Blob blob = Hibernate.createBlob(licenseInputStream);
+                    licenses.setFilename(file.getOriginalFilename());
+                    licenses.setContenttype(file.getContentType());
+                    licenses.setText(blob);
+                }
+                catch (IOException e) {
+                    LOGGER.error("An error occurred while adding a license fail to library");
+                    LOGGER.error(e.getMessage());
+                }
             }
-
-        } else {
+            
+            licenses.setLicensename(license);
+            session.save(licenses);
+        }
+        else {
             licenses = (License) query.list().get(0);
         }
 
         query = session.createQuery("from Library as lib where upper(lib.libraryname) =upper(:libraryname) and lib.libraryVendor=:vendor ");
-        query.setParameter("libraryname", libraryname);
+        query.setParameter("libraryname", libraryName);
         query.setParameter("vendor", libraryVendor);
 
         if (query.list().isEmpty()) {
             library = new Library();
-            library.setLibraryname(libraryname);
+            library.setLibraryname(libraryName);
             library.setLibraryVendor(libraryVendor);
             library.setLicense(licenses);
-
             library.setLanguage(language);
             session.save(library);
         } else {
@@ -532,12 +530,13 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         query.setParameter("vendor", libraryVendor);
         query.setParameter("libver", libraryversion);
 
+        Serializable id = null;
         if (query.list().isEmpty()) {
             final LibraryVersion libVersion = new LibraryVersion();
             libVersion.setLibrary(library);
             libVersion.setLibraryversion(libraryversion);
             libVersion.setUuid(UUID.randomUUID().toString());
-            session.save(libVersion);
+            id = session.save(libVersion);
         }
         session.getTransaction().commit();
 
@@ -551,6 +550,7 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         session.close();
 
         this.eventPublisher.publishEvent(new DependencyCheckAnalysisRequestEvent(libraryVersions));
+        return (int) id;
     }
 
 
@@ -610,7 +610,20 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         query.setParameter("searchTerm", "%" + searchTerm + "%");
         return query.list();
     }
+    
+    @SuppressWarnings("unchecked")
+    public LibraryVersion getLibrary(String libraryName, String libraryVersion, String vendor) {
+        final Query query = sessionFactory.getCurrentSession().createQuery(
+                "from LibraryVersion as libver where upper(libver.library.libraryname) "
+                        + "LIKE upper(:libraryname) AND upper(libver.library.libraryVendor.vendor) "
+                        + "LIKE upper(:vendor) AND upper(libver.libraryversion) LIKE upper(:libraryversion) order by libver.library.libraryname");
+        query.setParameter("libraryname", libraryName);
+        query.setParameter("libraryversion", libraryVersion);
+        query.setParameter("vendor", vendor);
+        return (LibraryVersion) query.uniqueResult();
+    }
 
+    @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         this.eventPublisher = applicationEventPublisher;
     }

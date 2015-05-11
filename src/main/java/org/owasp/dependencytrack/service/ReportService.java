@@ -19,11 +19,17 @@
 
 package org.owasp.dependencytrack.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.reporting.ReportGenerator;
 import org.owasp.dependencytrack.dao.ReportDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ReportService {
@@ -36,4 +42,19 @@ public class ReportService {
         return reportDao.generateDependencyCheckReport(applicationVersionId, format);
     }
 
+    @Transactional
+    public List<Dependency> getDependencies(MultipartFile multipartFile) {
+        File file = new File(multipartFile.getOriginalFilename());
+        try {
+            multipartFile.transferTo(file);
+            return reportDao.getDependencies(file);
+        }
+        catch (IOException ex) {
+            throw new RuntimeException("Error transfering multipartFile to file", ex);
+        }
+        finally {
+            file.delete();
+        }
+    }
+    
 }
