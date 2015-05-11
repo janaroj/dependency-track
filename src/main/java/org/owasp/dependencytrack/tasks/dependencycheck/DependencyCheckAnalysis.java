@@ -22,10 +22,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -57,6 +59,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.xml.sax.SAXException;
 
 
@@ -79,7 +83,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
      */
     @Autowired
     private SessionFactory sessionFactory;
-
+    
     /**
      * Default constructor.
      */
@@ -396,11 +400,23 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     private void checkForUpdates(List<LibraryVersion> libraryVersions) {
         for (LibraryVersion libraryVersion : libraryVersions) {
             Library lib = libraryVersion.getLibrary();
-            String query = "https://search.maven.org/solrsearch/select?q=g:%22" + lib.getLibraryVendor().getVendor() + "%22+AND+a:%22"
-                    + lib.getLibraryname() + "%22&core&rows=20&wt=json";
-            lib.setLatestLibraryVersion("1.0.RELEASE");
-            commitLibraryData(lib);
+            String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
+            if (latestVersion != null && !lib.getLatestLibraryVersion().equals(latestVersion)) {
+                lib.setLatestLibraryVersion(latestVersion);
+                commitLibraryData(lib);
+            }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String queryLatestLibraryVersion(String vendor, String libraryName) {
+        String query = "https://search.maven.org/solrsearch/select?q=g:{vendor}+AND+a:{library}&core&rows=20&wt=json";
+        URI uri = UriComponentsBuilder.fromUriString(query).build().expand(vendor, libraryName).toUri();
+        Map<String, Map<String, Object>> response = new RestTemplate().getForObject(uri, Map.class);
+        if ((int) response.get("response").get("numFound") == 1) {
+            return ((List<Map<String, String>>) response.get("response").get("docs")).get(0).get("latestVersion");
+        }
+        return null;
     }
     
     private void commitLibraryData(Library library) {
