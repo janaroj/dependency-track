@@ -398,6 +398,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     }
 
     private void checkForUpdates(List<LibraryVersion> libraryVersions) {
+        LOGGER.info("Checking for latest library versions");
         for (LibraryVersion libraryVersion : libraryVersions) {
             Library lib = libraryVersion.getLibrary();
             String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
@@ -406,6 +407,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
                 commitLibraryData(lib);
             }
         }
+        LOGGER.info("Latest library versions updated");
     }
 
     @SuppressWarnings("unchecked")
