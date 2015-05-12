@@ -32,12 +32,14 @@ import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 
 @Entity
 @Table(name = "PERMISSIONS")
 @Data
 @EqualsAndHashCode(exclude = {"maprole"})
+@ToString(exclude = {"maprole"})
 public class Permissions {
     /**
      * The unique identifier of the persisted object.

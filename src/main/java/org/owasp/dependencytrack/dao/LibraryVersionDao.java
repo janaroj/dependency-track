@@ -482,7 +482,7 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         query = session.createQuery("from License where upper(licensename) =upper(:license) ");
         query.setParameter("license", license);
 
-        if (query.list().isEmpty() && file != null) {
+        if (query.list().isEmpty()) {
             licenses = new License();
 
             if (file != null) {

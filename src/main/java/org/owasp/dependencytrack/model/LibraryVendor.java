@@ -33,11 +33,13 @@ import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "LIBRARYVENDOR")
 @Data
 @EqualsAndHashCode(exclude = {"libraries"})
+@ToString(exclude = {"libraries"})
 public final class LibraryVendor implements Cloneable {
 
     /**

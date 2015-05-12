@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -135,7 +137,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
                 log.severe("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
             }
         }
-        checkForUpdates(libraryVersions);
+        checkForLibraryUpdatesAndLicenses(libraryVersions);
         if (!sessionFactory.isClosed()) {
             sessionFactory.close();
         }
@@ -393,13 +395,25 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         return new Vulnerability();
     }
 
-    private void checkForUpdates(List<LibraryVersion> libraryVersions) {
+    private void checkForLibraryUpdatesAndLicenses(List<LibraryVersion> libraryVersions) {
         log.info("Checking for latest library versions");
         for (LibraryVersion libraryVersion : libraryVersions) {
             Library lib = libraryVersion.getLibrary();
+            boolean updateNeeded = false;
             String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
-            if (latestVersion != null && !lib.getLatestLibraryVersion().equals(latestVersion)) {
+            if (latestVersion != null && !latestVersion.equals(lib.getLatestLibraryVersion())) {
                 lib.setLatestLibraryVersion(latestVersion);
+                updateNeeded = true;
+            }
+            String licenseName = queryLicense(libraryVersion);
+            if (licenseName != null && lib.getLicense().getLicensename().equalsIgnoreCase("UNKNOWN")) {
+                License license = getLicenseIfExists(licenseName);
+                if (license != null) {
+                    lib.setLicense(license);
+                    updateNeeded = true;
+                }
+            }
+            if (updateNeeded) {
                 commitLibraryData(lib);
             }
         }
@@ -419,6 +433,31 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     
     private void commitLibraryData(Library library) {
         final Session session = sessionFactory.getCurrentSession();
-        session.save(library);
+        session.update(library);
     }
+    
+    private String queryLicense(LibraryVersion library) {
+        String query = "https://search.maven.org/remotecontent?filepath={group}/{artifact}/{version}/{artifact}-{version}.pom";
+        String group = library.getLibrary().getLibraryVendor().getVendor().replaceAll("\\.", "/");
+        String artifact = library.getLibrary().getLibraryname();
+        String version = library.getLibraryversion();
+        URI uri = UriComponentsBuilder.fromUriString(query).build()
+                .expand(group, artifact, version, artifact, version)
+                .toUri();
+        String pom = new RestTemplate().getForObject(uri, String.class);
+        String regex = "<licenses>([^<]*)<license>([^<]*)<name>([^<]*)</name>";
+        Matcher matcher = Pattern.compile(regex).matcher(pom);
+        if (matcher.find()) {
+            return matcher.group(3);
+        }
+        return null;
+    }
+    
+    private License getLicenseIfExists(String license) {
+        final Session session = sessionFactory.getCurrentSession();
+        Query query = session.createQuery("from License where upper(licensename) =upper(:license) ");
+        query.setParameter("license", license);
+        return (License) query.uniqueResult();
+    }
+    
 }

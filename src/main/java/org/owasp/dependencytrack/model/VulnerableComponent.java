@@ -24,12 +24,14 @@ import java.util.List;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * This is a non-persistent convenience class.
  */
 @Data
 @EqualsAndHashCode(exclude = {"vulnerabilities"})
+@ToString(exclude = {"vulnerabilities"})
 public class VulnerableComponent {
 
     private LibraryVersion libraryVersion;

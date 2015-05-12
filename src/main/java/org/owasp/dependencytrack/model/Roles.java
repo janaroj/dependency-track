@@ -36,11 +36,13 @@ import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "ROLES")
 @Data
 @EqualsAndHashCode(exclude = {"usr", "perm"})
+@ToString(exclude = {"usr", "perm"})
 public class Roles {
 
     /**

@@ -32,11 +32,13 @@ import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "LICENSES")
 @Data
 @EqualsAndHashCode(exclude = {"text", "url"})
+@ToString(exclude = {"text", "url"})
 public final class License implements Cloneable {
 
     /**
