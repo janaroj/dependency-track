@@ -26,7 +26,7 @@ import java.io.OutputStream;
 
 import javax.servlet.http.HttpServletResponse;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -43,7 +43,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
-@Log
+@Slf4j
 public class DownloadController extends AbstractController {
 
     /**
@@ -99,7 +99,7 @@ public class DownloadController extends AbstractController {
             IOUtils.copy(fis, out);
             out.flush();
         } catch (IOException ex) {
-            log.severe("Error writing NIST datafile to output stream.");
+            log.error("Error writing NIST datafile to output stream.");
             throw new RuntimeException("IOError writing file to output stream");
         } finally {
             IOUtils.closeQuietly(out);

@@ -24,7 +24,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.hibernate.SessionFactory;
 import org.owasp.dependencycheck.Engine;
@@ -47,7 +47,7 @@ import org.springframework.stereotype.Repository;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Repository
-@Log
+@Slf4j
 public class ReportDao {
 
     /**
@@ -74,7 +74,7 @@ public class ReportDao {
             cve.open();
             properties = cve.getDatabaseProperties();
         } catch (DatabaseException ex) {
-            log.severe("Unable to retrieve DB Properties: " + ex.getMessage());
+            log.error("Unable to retrieve DB Properties: " + ex.getMessage());
         } finally {
             if (cve != null) {
                 cve.close();
@@ -120,7 +120,7 @@ public class ReportDao {
             engine.cleanup();
             return baos.toString("UTF-8");
         } catch (Exception e) {
-            log.severe("An error occurred generating a Dependency-Check report: " + e.getMessage());
+            log.error("An error occurred generating a Dependency-Check report: " + e.getMessage());
         }
         return null;
     }
@@ -142,7 +142,7 @@ public class ReportDao {
             return engine.getDependencies();
         }
         catch (DatabaseException ex) {
-            log.severe("Unable to connect to the dependency-check database: " +  ex.getMessage());
+            log.error("Unable to connect to the dependency-check database: " +  ex.getMessage());
             return null;
         } finally {
             Settings.cleanup(true);

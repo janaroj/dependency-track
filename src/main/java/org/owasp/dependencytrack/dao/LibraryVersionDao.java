@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.IOUtils;
 import org.hibernate.Hibernate;
@@ -50,7 +50,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
 
 @Repository
-@Log
+@Slf4j
 public class LibraryVersionDao implements ApplicationEventPublisherAware {
 
     /**
@@ -493,8 +493,8 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
                     licenses.setText(blob);
                 }
                 catch (IOException e) {
-                    log.severe("An error occurred while adding a license fail to library");
-                    log.severe(e.getMessage());
+                    log.error("An error occurred while adding a license fail to library");
+                    log.error(e.getMessage());
                 }
             }
             
@@ -546,6 +546,7 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         session.close();
 
         this.eventPublisher.publishEvent(new DependencyCheckAnalysisRequestEvent(libraryVersions));
+        log.info("Added library: {}.{}.{}", libraryVendor.getVendor(), library.getLibraryname(), libraryversion);
         return (int) id;
     }
 
@@ -585,8 +586,8 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
                 query.executeUpdate();
             }
         } catch (IOException e) {
-            log.severe("An error occurred while uploading a license");
-            log.severe(e.getMessage());
+            log.error("An error occurred while uploading a license");
+            log.error(e.getMessage());
         } finally {
             IOUtils.closeQuietly(licenseInputStream);
         }

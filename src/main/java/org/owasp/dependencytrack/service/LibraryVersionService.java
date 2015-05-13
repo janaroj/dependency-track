@@ -22,7 +22,7 @@ package org.owasp.dependencytrack.service;
 import java.util.Iterator;
 import java.util.List;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.dependency.Identifier;
@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-@Log
+@Slf4j
 public class LibraryVersionService {
 
     @Autowired
@@ -140,16 +140,19 @@ public class LibraryVersionService {
     
     @Transactional
     public void addDependenciesToApplication(List<Dependency> dependencies, int appVersionId) {
+        int count = 0;
         for (Dependency dependency : dependencies) {
             if (dependency.getIdentifiers().size() > 0) {
                 String[] identifierParts = getIdentifier(dependency).getValue().split(":");
                 Integer libVersionId = addLibraries(identifierParts[1], identifierParts[2], identifierParts[0], "UNKNOWN", null, null);
                 addDependency(appVersionId, libVersionId);
+                count++;
             }
             else {
-                log.warning("No identifiers found for " + dependency.getFileName());
+                log.warn("No identifiers found for " + dependency.getFileName());
             }
         }
+        log.info("{}/{} dependencies added to application {}", count, dependencies.size(),appVersionId);
     }
 
     private Identifier getIdentifier(Dependency dependency) {
@@ -172,7 +175,7 @@ public class LibraryVersionService {
             }
         }
         catch (Exception ex) {
-            log.warning(ex.getMessage());
+            log.warn(ex.getMessage());
         }
         return identifier; //What to do when more than 1 identifier? Currently tries to get the one with right version and libName
     }

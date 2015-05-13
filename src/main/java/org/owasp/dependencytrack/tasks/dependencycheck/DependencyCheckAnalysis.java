@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -59,6 +59,8 @@ import org.owasp.dependencytrack.tasks.DependencyCheckAnalysisRequestEvent;
 import org.owasp.dependencytrack.util.XmlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -73,7 +75,7 @@ import org.xml.sax.SAXException;
  */
 @Service
 @Transactional
-@Log
+@Slf4j
 public class DependencyCheckAnalysis implements ApplicationListener<DependencyCheckAnalysisRequestEvent> {
 
     /**
@@ -106,6 +108,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             execute(false);
         } else {
             execute(libraryVersions, false);
+            checkForLibraryUpdatesAndLicenses(libraryVersions);
         }
     }
 
@@ -130,14 +133,13 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         if (sessionFactory.isClosed()) {
             sessionFactory.openSession();
         }
-        if (performAnalysis(libraryVersions, false)) {
+        if (performAnalysis(libraryVersions, autoUpdate)) {
             try {
                 analyzeResults();
             } catch (SAXException | IOException e) {
-                log.severe("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
+                log.error("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
             }
         }
-        checkForLibraryUpdatesAndLicenses(libraryVersions);
         if (!sessionFactory.isClosed()) {
             sessionFactory.close();
         }
@@ -192,7 +194,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             scanAgent.execute();
             success = true;
         } catch (ScanAgentException e) {
-            log.severe("An error occurred executing Dependency-Check scan agent: " + e.getMessage());
+            log.error("An error occurred executing Dependency-Check scan agent: " + e.getMessage());
         }
 
         log.info("Dependency-Check analysis complete");
@@ -404,10 +406,11 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     }
 
     private void handleLibraryVersion(LibraryVersion libraryVersion) {
-        final Session session = sessionFactory.getCurrentSession();
-        final Query query = session.createQuery("FROM Library WHERE id=:id");
+        final Session session = sessionFactory.openSession();
+        Query query = session.createQuery("FROM Library WHERE id=:id");
         query.setParameter("id", libraryVersion.getLibrary().getId());
         final Library lib = (Library) query.uniqueResult();
+        
         if (lib == null) {
             return;
         }
@@ -423,49 +426,44 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         if (lib.getLicense().getLicensename().equalsIgnoreCase("UNKNOWN")) {
             String licenseName = queryLicense(libraryVersion);
             if (licenseName != null) {
-                License license = getLicenseIfExists(licenseName);
+                query = session.createQuery("from License where upper(licensename) =upper(:license) ");
+                query.setParameter("license", licenseName);
+                License license = (License) query.uniqueResult();
                 updateNeeded = true;
                 if (license == null) {
                     license = new License();
                     license.setLicensename(licenseName);
-                    saveLicense(license);
+                    session.save(license);
                 }
                 lib.setLicense(license);
             }
         }
         
         if (updateNeeded) {
-            updateLibrary(lib);
+            session.update(lib);
         }
+        session.close();
     }
 
     @SuppressWarnings("unchecked")
     private String queryLatestLibraryVersion(String vendor, String libraryName) {
+        log.info("Querying version for {}", libraryName);
         String query = "https://search.maven.org/solrsearch/select?q=g:{vendor}+AND+a:{library}&core&rows=20&wt=json";
         URI uri = UriComponentsBuilder.fromUriString(query).build().expand(vendor, libraryName).toUri();
         try {
-            Map<String, Map<String, Object>> response = new RestTemplate().getForObject(uri, Map.class);
+            Map<String, Map<String, Object>> response = new RestTemplate(createRequestFactory(5)).getForObject(uri, Map.class);
             if ((int) response.get("response").get("numFound") == 1) {
                 return ((List<Map<String, String>>) response.get("response").get("docs")).get(0).get("latestVersion");
             }
         }
         catch (Exception ex) {
-            log.warning(ex.getMessage());
+            log.warn("Querying latest library version. Exception: {}. uri: {}", ex.getMessage(), uri.toString());
         }
         return null;
     }
     
-    private void updateLibrary(Library library) {
-        final Session session = sessionFactory.getCurrentSession();
-        session.update(library);
-    }
-    
-    private void saveLicense(License license) {
-        final Session session = sessionFactory.getCurrentSession();
-        session.save(license);
-    }
-    
     private String queryLicense(LibraryVersion library) {
+        log.info("Querying license for {}", library.getLibrary().getLibraryname());
         String query = "https://search.maven.org/remotecontent?filepath={group}/{artifact}/{version}/{artifact}-{version}.pom";
         String group = library.getLibrary().getLibraryVendor().getVendor().replaceAll("\\.", "/");
         String artifact = library.getLibrary().getLibraryname();
@@ -474,7 +472,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
                 .expand(group, artifact, version, artifact, version)
                 .toUri();
         try {
-            String pom = new RestTemplate().getForObject(uri, String.class);
+            String pom = new RestTemplate(createRequestFactory(5)).getForObject(uri, String.class);
             String regex = "<licenses>([^<]*)<license>([^<]*)<name>([^<]*)</name>";
             Matcher matcher = Pattern.compile(regex).matcher(pom);
             if (matcher.find()) {
@@ -482,16 +480,16 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             }
         }
         catch (Exception ex) {
-            log.warning(ex.getMessage());
+            log.warn("Querying License. Exception: {}. Group: {}, Artifact: {}, Version: {}", ex.getMessage(), group, artifact, version);
         }
         return null;
     }
     
-    private License getLicenseIfExists(String license) {
-        final Session session = sessionFactory.getCurrentSession();
-        Query query = session.createQuery("from License where upper(licensename) =upper(:license) ");
-        query.setParameter("license", license);
-        return (License) query.uniqueResult();
+    private ClientHttpRequestFactory createRequestFactory(int seconds) {
+        HttpComponentsClientHttpRequestFactory rf =new HttpComponentsClientHttpRequestFactory();
+        rf.setReadTimeout(seconds * 1000);
+        rf.setConnectTimeout(seconds * 1000);
+        return rf;
     }
 
 }

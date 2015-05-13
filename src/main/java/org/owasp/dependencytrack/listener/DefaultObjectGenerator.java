@@ -27,7 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.IOUtils;
 import org.hibernate.Hibernate;
@@ -52,7 +52,7 @@ import org.springframework.stereotype.Component;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Component
-@Log
+@Slf4j
 public class DefaultObjectGenerator implements ApplicationListener<ContextRefreshedEvent> {
 
     /**
@@ -147,7 +147,7 @@ public class DefaultObjectGenerator implements ApplicationListener<ContextRefres
             loadDefaultRoles();
             loadDefaultUsers();
         } catch (IOException e) {
-            log.warning(e.getMessage());
+            log.warn(e.getMessage());
         }
     }
 

@@ -7,6 +7,13 @@
             <pattern>%date %level [%thread] [%file:%line] %msg%n</pattern>
         </encoder>
     </appender>
+    
+    <appender name="WARNFILE" class="ch.qos.logback.core.FileAppender">
+        <file>${user.home}/dependency-track/log/dependency-track-warning.log</file>
+        <encoder>
+            <pattern>%date %level [%thread] [%file:%line] %msg%n</pattern>
+        </encoder>
+    </appender>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -15,6 +22,11 @@
     </appender>
 
     <logger name="org.owasp.dependencytrack" level="INFO" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+    
+     <logger name="org.owasp.dependencytrack.warn" level="WARN" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
 

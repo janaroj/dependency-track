@@ -27,7 +27,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Calendar;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.IOUtils;
 import org.owasp.dependencytrack.Constants;
@@ -38,7 +38,7 @@ import org.springframework.scheduling.annotation.Scheduled;
  * to the sources via an internal mirror.
  * @author Steve Springett (steve.springett@owasp.org)
  */
-@Log
+@Slf4j
 public class NistDataMirrorUpdater {
 
     /**
@@ -86,7 +86,7 @@ public class NistDataMirrorUpdater {
                 doDownload(cve20BaseUrl);
             }
         } catch (IOException e) {
-            log.warning("An error occurred during the NIST data mirror update process: " + e.getMessage());
+            log.warn("An error occurred during the NIST data mirror update process: " + e.getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ public class NistDataMirrorUpdater {
                 bos.write(i);
             }
         } catch (IOException e) {
-            log.warning("An error occurred during the download or saving of NIST XML data: " + e.getMessage());
+            log.warn("An error occurred during the download or saving of NIST XML data: " + e.getMessage());
         } finally {
             IOUtils.closeQuietly(bis);
             IOUtils.closeQuietly(bos);

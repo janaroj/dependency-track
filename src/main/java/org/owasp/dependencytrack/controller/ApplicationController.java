@@ -24,7 +24,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
@@ -55,7 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
-@Log
+@Slf4j
 public class ApplicationController extends AbstractController {
 
     /**

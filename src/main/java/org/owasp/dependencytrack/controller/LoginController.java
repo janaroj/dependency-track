@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
@@ -44,7 +44,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
-@Log
+@Slf4j
 public class LoginController extends AbstractController {
 
     /**

@@ -27,7 +27,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -48,7 +48,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
-@Log
+@Slf4j
 public class LibraryController extends AbstractController {
 
     /**
@@ -169,8 +169,8 @@ public class LibraryController extends AbstractController {
             IOUtils.copy(in, out);
             out.flush();
         } catch (IOException | SQLException e) {
-            log.severe("An error occurred downloading a license");
-            log.severe(e.getMessage());
+            log.error("An error occurred downloading a license");
+            log.error(e.getMessage());
         } finally {
             IOUtils.closeQuietly(in);
             IOUtils.closeQuietly(out);
@@ -204,8 +204,8 @@ public class LibraryController extends AbstractController {
                 IOUtils.copy(in, out);
                 out.flush();
             } catch (IOException | SQLException e) {
-                log.severe("An error occurred while viewing a license");
-                log.severe(e.getMessage());
+                log.error("An error occurred while viewing a license");
+                log.error(e.getMessage());
             } finally {
                 IOUtils.closeQuietly(in);
                 IOUtils.closeQuietly(out);

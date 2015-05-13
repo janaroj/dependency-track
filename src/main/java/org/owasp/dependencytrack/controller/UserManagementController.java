@@ -20,7 +20,7 @@ package org.owasp.dependencytrack.controller;
 
 import java.util.Map;
 
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @author Steve Springett (steve.springett@owasp.org)
  */
 @Controller
-@Log
+@Slf4j
 public class UserManagementController extends AbstractController {
 
     /**
