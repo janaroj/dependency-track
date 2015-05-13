@@ -27,7 +27,7 @@
     </logger>
     
      <logger name="org.owasp.dependencytrack.warn" level="WARN" additivity="false">
-        <appender-ref ref="FILE" />
+        <appender-ref ref="WARNFILE" />
     </logger>
 
     <root level="DEBUG">

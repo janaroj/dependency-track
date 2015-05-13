@@ -108,7 +108,6 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
             execute(false);
         } else {
             execute(libraryVersions, false);
-            checkForLibraryUpdatesAndLicenses(libraryVersions);
         }
     }
 
@@ -140,6 +139,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
                 log.error("An error occurred while analyzing Dependency-Check results: " + e.getMessage());
             }
         }
+        checkForLibraryUpdatesAndLicenses(libraryVersions);
         if (!sessionFactory.isClosed()) {
             sessionFactory.close();
         }
@@ -406,43 +406,38 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     }
 
     private void handleLibraryVersion(LibraryVersion libraryVersion) {
-        final Session session = sessionFactory.openSession();
-        Query query = session.createQuery("FROM Library WHERE id=:id");
-        query.setParameter("id", libraryVersion.getLibrary().getId());
-        final Library lib = (Library) query.uniqueResult();
+        Library lib = libraryVersion.getLibrary();
         
         if (lib == null) {
             return;
         }
-
-        boolean updateNeeded = false;
         
         String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
         if (latestVersion != null && !latestVersion.equals(lib.getLatestLibraryVersion())) {
             lib.setLatestLibraryVersion(latestVersion);
-            updateNeeded = true;
+            updateLibrayLatestVersion(lib.getId(), lib.getLatestLibraryVersion());
         }
         
         if (lib.getLicense().getLicensename().equalsIgnoreCase("UNKNOWN")) {
             String licenseName = queryLicense(libraryVersion);
             if (licenseName != null) {
-                query = session.createQuery("from License where upper(licensename) =upper(:license) ");
-                query.setParameter("license", licenseName);
-                License license = (License) query.uniqueResult();
-                updateNeeded = true;
-                if (license == null) {
-                    license = new License();
-                    license.setLicensename(licenseName);
-                    session.save(license);
-                }
-                lib.setLicense(license);
+                lib.setLicense(getLicense(licenseName));
+                updateLibrayLicense(lib.getId(), lib.getLicense().getId());
             }
         }
-        
-        if (updateNeeded) {
-            session.update(lib);
+    }
+
+    private License getLicense(String licenseName) {
+        final Session session = sessionFactory.getCurrentSession();
+        final Query query = session.createQuery("from License where upper(licensename) =upper(:license) ");
+        query.setParameter("license", licenseName);
+        License license = (License) query.uniqueResult();
+        if (license == null) {
+            license = new License();
+            license.setLicensename(licenseName);
+            session.save(license);
         }
-        session.close();
+        return license;
     }
 
     @SuppressWarnings("unchecked")
@@ -468,9 +463,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         String group = library.getLibrary().getLibraryVendor().getVendor().replaceAll("\\.", "/");
         String artifact = library.getLibrary().getLibraryname();
         String version = library.getLibraryversion();
-        URI uri = UriComponentsBuilder.fromUriString(query).build()
-                .expand(group, artifact, version, artifact, version)
-                .toUri();
+        URI uri = UriComponentsBuilder.fromUriString(query).build().expand(group, artifact, version, artifact, version).toUri();
         try {
             String pom = new RestTemplate(createRequestFactory(5)).getForObject(uri, String.class);
             String regex = "<licenses>([^<]*)<license>([^<]*)<name>([^<]*)</name>";
@@ -490,6 +483,22 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         rf.setReadTimeout(seconds * 1000);
         rf.setConnectTimeout(seconds * 1000);
         return rf;
+    }
+    
+    private void updateLibrayLicense(Integer libraryId, Integer licenseId) {
+        final Session session = sessionFactory.getCurrentSession();
+        final Query query = session.createQuery("update Library set licenseid = :licenseId where id = :libraryId");
+        query.setParameter("licenseId", licenseId);
+        query.setParameter("libraryId", libraryId);
+        query.executeUpdate();
+    }
+
+    private void updateLibrayLatestVersion(Integer libraryId, String latestLibraryVersion) {
+        final Session session = sessionFactory.getCurrentSession();
+        final Query query = session.createQuery("update Library set latestlibraryversion = :latestVersion where id = :libraryId");
+        query.setParameter("latestVersion", latestLibraryVersion);
+        query.setParameter("libraryId", libraryId);
+        query.executeUpdate();
     }
 
 }
