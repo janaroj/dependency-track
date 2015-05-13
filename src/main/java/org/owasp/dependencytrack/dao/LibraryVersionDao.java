@@ -433,7 +433,7 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
     @SuppressWarnings("unchecked")
     public List<String> uniqueLang() {
         final Query query = sessionFactory.getCurrentSession().
-                createQuery("select distinct lib.language from Library as lib order by lib.language");
+                createQuery("select distinct lib.language from Library as lib  where lib.language is not null order by lib.language");
         return query.list();
     }
 

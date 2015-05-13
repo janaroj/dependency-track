@@ -103,34 +103,34 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     public void onApplicationEvent(DependencyCheckAnalysisRequestEvent event) {
         final List<LibraryVersion> libraryVersions = event.getLibraryVersions();
         if (libraryVersions == null || libraryVersions.size() == 0) {
-            execute();
+            execute(false);
         } else {
-            execute(libraryVersions);
+            execute(libraryVersions, false);
         }
     }
 
     /**
      * Performs a scan against all libraries in the database.
      */
-    public synchronized void execute() {
+    public synchronized void execute(boolean autoUpdate) {
         sessionFactory.openSession();
         // Retrieve a list of all library versions defined in the system
         final Query query = sessionFactory.getCurrentSession().createQuery("from LibraryVersion");
         @SuppressWarnings("unchecked")
         final List<LibraryVersion> libraryVersions = query.list();
 
-        execute(libraryVersions);
+        execute(libraryVersions, autoUpdate);
     }
 
     /**
      * Performs a scan against the specified list of libraries.
      * @param libraryVersions a list of LibraryVersion object to perform a scan against
      */
-    public synchronized void execute(List<LibraryVersion> libraryVersions) {
+    public synchronized void execute(List<LibraryVersion> libraryVersions, boolean autoUpdate) {
         if (sessionFactory.isClosed()) {
             sessionFactory.openSession();
         }
-        if (performAnalysis(libraryVersions)) {
+        if (performAnalysis(libraryVersions, false)) {
             try {
                 analyzeResults();
             } catch (SAXException | IOException e) {
@@ -148,7 +148,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
      * @param libraryVersions a list of LibraryVersion object to perform a scan against
      * @return true if scan was successful, false if scan failed for some reason
      */
-    private synchronized boolean performAnalysis(List<LibraryVersion> libraryVersions) {
+    private synchronized boolean performAnalysis(List<LibraryVersion> libraryVersions, boolean autoUpdate) {
         log.info("Executing Dependency-Check Task");
 
         // iterate through the libraries, create evidence and create the resulting dependency
@@ -176,7 +176,7 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         scanAgent.setDataDirectory(Constants.DATA_DIR);
         scanAgent.setReportOutputDirectory(Constants.APP_DIR);
         scanAgent.setReportFormat(ReportGenerator.Format.ALL);
-        scanAgent.setAutoUpdate(true);
+        scanAgent.setAutoUpdate(autoUpdate);
         scanAgent.setDependencies(dependencies);
         scanAgent.setCentralAnalyzerEnabled(false);
         scanAgent.setNexusAnalyzerEnabled(false);
@@ -396,44 +396,73 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
     }
 
     private void checkForLibraryUpdatesAndLicenses(List<LibraryVersion> libraryVersions) {
-        log.info("Checking for latest library versions");
+        log.info("Checking for latest library versions and licenses");
         for (LibraryVersion libraryVersion : libraryVersions) {
-            Library lib = libraryVersion.getLibrary();
-            boolean updateNeeded = false;
-            String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
-            if (latestVersion != null && !latestVersion.equals(lib.getLatestLibraryVersion())) {
-                lib.setLatestLibraryVersion(latestVersion);
-                updateNeeded = true;
-            }
+            handleLibraryVersion(libraryVersion);
+        }
+        log.info("Latest library versions and licenses updated");
+    }
+
+    private void handleLibraryVersion(LibraryVersion libraryVersion) {
+        final Session session = sessionFactory.getCurrentSession();
+        final Query query = session.createQuery("FROM Library WHERE id=:id");
+        query.setParameter("id", libraryVersion.getLibrary().getId());
+        final Library lib = (Library) query.uniqueResult();
+        if (lib == null) {
+            return;
+        }
+
+        boolean updateNeeded = false;
+        
+        String latestVersion = queryLatestLibraryVersion(lib.getLibraryVendor().getVendor(), lib.getLibraryname());
+        if (latestVersion != null && !latestVersion.equals(lib.getLatestLibraryVersion())) {
+            lib.setLatestLibraryVersion(latestVersion);
+            updateNeeded = true;
+        }
+        
+        if (lib.getLicense().getLicensename().equalsIgnoreCase("UNKNOWN")) {
             String licenseName = queryLicense(libraryVersion);
-            if (licenseName != null && lib.getLicense().getLicensename().equalsIgnoreCase("UNKNOWN")) {
+            if (licenseName != null) {
                 License license = getLicenseIfExists(licenseName);
-                if (license != null) {
-                    lib.setLicense(license);
-                    updateNeeded = true;
+                updateNeeded = true;
+                if (license == null) {
+                    license = new License();
+                    license.setLicensename(licenseName);
+                    saveLicense(license);
                 }
-            }
-            if (updateNeeded) {
-                commitLibraryData(lib);
+                lib.setLicense(license);
             }
         }
-        log.info("Latest library versions updated");
+        
+        if (updateNeeded) {
+            updateLibrary(lib);
+        }
     }
 
     @SuppressWarnings("unchecked")
     private String queryLatestLibraryVersion(String vendor, String libraryName) {
         String query = "https://search.maven.org/solrsearch/select?q=g:{vendor}+AND+a:{library}&core&rows=20&wt=json";
         URI uri = UriComponentsBuilder.fromUriString(query).build().expand(vendor, libraryName).toUri();
-        Map<String, Map<String, Object>> response = new RestTemplate().getForObject(uri, Map.class);
-        if ((int) response.get("response").get("numFound") == 1) {
-            return ((List<Map<String, String>>) response.get("response").get("docs")).get(0).get("latestVersion");
+        try {
+            Map<String, Map<String, Object>> response = new RestTemplate().getForObject(uri, Map.class);
+            if ((int) response.get("response").get("numFound") == 1) {
+                return ((List<Map<String, String>>) response.get("response").get("docs")).get(0).get("latestVersion");
+            }
+        }
+        catch (Exception ex) {
+            log.warning(ex.getMessage());
         }
         return null;
     }
     
-    private void commitLibraryData(Library library) {
+    private void updateLibrary(Library library) {
         final Session session = sessionFactory.getCurrentSession();
         session.update(library);
+    }
+    
+    private void saveLicense(License license) {
+        final Session session = sessionFactory.getCurrentSession();
+        session.save(license);
     }
     
     private String queryLicense(LibraryVersion library) {
@@ -444,11 +473,16 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         URI uri = UriComponentsBuilder.fromUriString(query).build()
                 .expand(group, artifact, version, artifact, version)
                 .toUri();
-        String pom = new RestTemplate().getForObject(uri, String.class);
-        String regex = "<licenses>([^<]*)<license>([^<]*)<name>([^<]*)</name>";
-        Matcher matcher = Pattern.compile(regex).matcher(pom);
-        if (matcher.find()) {
-            return matcher.group(3);
+        try {
+            String pom = new RestTemplate().getForObject(uri, String.class);
+            String regex = "<licenses>([^<]*)<license>([^<]*)<name>([^<]*)</name>";
+            Matcher matcher = Pattern.compile(regex).matcher(pom);
+            if (matcher.find()) {
+                return matcher.group(3);
+            }
+        }
+        catch (Exception ex) {
+            log.warning(ex.getMessage());
         }
         return null;
     }
@@ -459,5 +493,5 @@ public class DependencyCheckAnalysis implements ApplicationListener<DependencyCh
         query.setParameter("license", license);
         return (License) query.uniqueResult();
     }
-    
+
 }

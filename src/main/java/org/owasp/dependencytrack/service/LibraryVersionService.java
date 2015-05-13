@@ -19,9 +19,13 @@
 
 package org.owasp.dependencytrack.service;
 
+import java.util.Iterator;
 import java.util.List;
 
+import lombok.extern.java.Log;
+
 import org.owasp.dependencycheck.dependency.Dependency;
+import org.owasp.dependencycheck.dependency.Identifier;
 import org.owasp.dependencytrack.dao.LibraryVersionDao;
 import org.owasp.dependencytrack.model.ApplicationVersion;
 import org.owasp.dependencytrack.model.Library;
@@ -34,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@Log
 public class LibraryVersionService {
 
     @Autowired
@@ -136,15 +141,40 @@ public class LibraryVersionService {
     @Transactional
     public void addDependenciesToApplication(List<Dependency> dependencies, int appVersionId) {
         for (Dependency dependency : dependencies) {
-            if (dependency.getIdentifiers().size() == 1) {
-                String[] identifierParts = dependency.getIdentifiers().iterator().next().getValue().split(":");
+            if (dependency.getIdentifiers().size() > 0) {
+                String[] identifierParts = getIdentifier(dependency).getValue().split(":");
                 Integer libVersionId = addLibraries(identifierParts[1], identifierParts[2], identifierParts[0], "UNKNOWN", null, null);
                 addDependency(appVersionId, libVersionId);
             }
             else {
-                System.out.println("DEBUG HERE - WHAT TO DO WHEN MULTIPLE OR NO IDENTIFIERS?");
+                log.warning("No identifiers found for " + dependency.getFileName());
             }
         }
+    }
+
+    private Identifier getIdentifier(Dependency dependency) {
+        Iterator<Identifier> iterator = dependency.getIdentifiers().iterator();
+        Identifier identifier = iterator.next();
+        try {
+            String[] splitFileName = dependency.getFileName().split(" ");
+            String lib = splitFileName[splitFileName.length - 1];
+            String libName = lib.substring(0, lib.lastIndexOf("-"));
+            String version = lib.substring(lib.lastIndexOf("-") + 1, lib.lastIndexOf("."));
+            while (iterator.hasNext()) {
+                Identifier temp = iterator.next();
+                String[] parts = temp.getValue().split(":");
+                if (parts.length == 3 && parts[1].equalsIgnoreCase(libName) && parts[2].equalsIgnoreCase(version) && !temp.getType().equals("cpe")) {
+                    return temp;
+                }
+                if (identifier.getType().equals("cpe")) {
+                    identifier = temp;
+                }
+            }
+        }
+        catch (Exception ex) {
+            log.warning(ex.getMessage());
+        }
+        return identifier; //What to do when more than 1 identifier? Currently tries to get the one with right version and libName
     }
 
 }

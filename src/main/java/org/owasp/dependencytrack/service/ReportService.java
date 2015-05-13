@@ -20,6 +20,7 @@
 package org.owasp.dependencytrack.service;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -44,9 +45,9 @@ public class ReportService {
 
     @Transactional
     public List<Dependency> getDependencies(MultipartFile multipartFile) {
-        File file = new File(multipartFile.getOriginalFilename());
+        File file = null;
         try {
-            multipartFile.transferTo(file);
+            file = convert(multipartFile);
             return reportDao.getDependencies(file);
         }
         catch (IOException ex) {
@@ -55,6 +56,15 @@ public class ReportService {
         finally {
             file.delete();
         }
+    }
+    
+    private File convert(MultipartFile file) throws IOException {    
+        File convFile = new File(System.currentTimeMillis() + "-" + file.getOriginalFilename());
+        convFile.createNewFile(); 
+        FileOutputStream fos = new FileOutputStream(convFile); 
+        fos.write(file.getBytes());
+        fos.close(); 
+        return convFile;
     }
     
 }

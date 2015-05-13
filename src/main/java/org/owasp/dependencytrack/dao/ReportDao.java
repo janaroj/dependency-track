@@ -128,11 +128,17 @@ public class ReportDao {
     public List<Dependency> getDependencies(File file) {
         Engine engine = null;
         Settings.initialize();
+        Settings.setBoolean(Settings.KEYS.AUTO_UPDATE, false);
         initializeProperties();
         try {
             engine = new Engine(this.getClass().getClassLoader());
             engine.scan(file);
             engine.analyzeDependencies();
+            // Quick hack to save time searching for correct cause
+            if (engine.getDependencies().size() == 1) {
+                Settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
+                engine.analyzeDependencies();
+            }
             return engine.getDependencies();
         }
         catch (DatabaseException ex) {
