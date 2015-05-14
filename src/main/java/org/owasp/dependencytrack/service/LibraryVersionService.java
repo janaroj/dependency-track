@@ -22,11 +22,13 @@ package org.owasp.dependencytrack.service;
 import java.util.Iterator;
 import java.util.List;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import org.owasp.dependencycheck.dependency.Dependency;
 import org.owasp.dependencycheck.dependency.Identifier;
 import org.owasp.dependencytrack.dao.LibraryVersionDao;
+import org.owasp.dependencytrack.model.ApplicationDependency;
 import org.owasp.dependencytrack.model.ApplicationVersion;
 import org.owasp.dependencytrack.model.Library;
 import org.owasp.dependencytrack.model.LibraryVendor;
@@ -35,6 +37,7 @@ import org.owasp.dependencytrack.model.License;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -52,7 +55,10 @@ public class LibraryVersionService {
 
     @Transactional
     public void addDependency(int appversionid, int libversionid) {
-        libraryVersionDao.addDependency(appversionid, libversionid);
+        ApplicationDependency applicationDependency = libraryVersionDao.getApplicationDependency(appversionid, libversionid);
+        if (applicationDependency == null) {
+            libraryVersionDao.addDependency(appversionid, libversionid);
+        }
     }
 
     @Transactional
@@ -71,12 +77,8 @@ public class LibraryVersionService {
 
 
     @Transactional
-    public void updateLibrary(int vendorid, int licenseid, int libraryid,
-                              int libraryversionid, String libraryname, String libraryversion,
-                              String vendor, String license,  String language) {
-
-        libraryVersionDao.updateLibrary(vendorid, licenseid, libraryid,
-                libraryversionid, libraryname, libraryversion, vendor, license, language);
+    public void updateLibrary(int vendorid, int licenseid, int libraryid, int libraryversionid, String libraryname, String libraryversion, String vendor, String license,  String language) {
+        libraryVersionDao.updateLibrary(vendorid, licenseid, libraryid, libraryversionid, libraryname, libraryversion, vendor, license, language);
     }
 
     @Transactional
@@ -143,8 +145,8 @@ public class LibraryVersionService {
         int count = 0;
         for (Dependency dependency : dependencies) {
             if (dependency.getIdentifiers().size() > 0) {
-                String[] identifierParts = getIdentifier(dependency).getValue().split(":");
-                Integer libVersionId = addLibraries(identifierParts[1], identifierParts[2], identifierParts[0], "UNKNOWN", null, null);
+                FileData fileData = getIdentifiedLibrary(dependency);
+                Integer libVersionId = addLibraries(fileData.getName(), fileData.getVersion(), fileData.getVendor(), "UNKNOWN", null, null);
                 addDependency(appVersionId, libVersionId);
                 count++;
             }
@@ -152,32 +154,108 @@ public class LibraryVersionService {
                 log.warn("No identifiers found for " + dependency.getFileName());
             }
         }
-        log.info("{}/{} dependencies added to application {}", count, dependencies.size(),appVersionId);
+        log.info("{}/{} dependencies successfully processed. No known identifiers for others.", count, dependencies.size());
     }
 
-    private Identifier getIdentifier(Dependency dependency) {
+    private FileData getIdentifiedLibrary(Dependency dependency) {
         Iterator<Identifier> iterator = dependency.getIdentifiers().iterator();
-        Identifier identifier = iterator.next();
-        try {
-            String[] splitFileName = dependency.getFileName().split(" ");
-            String lib = splitFileName[splitFileName.length - 1];
-            String libName = lib.substring(0, lib.lastIndexOf("-"));
-            String version = lib.substring(lib.lastIndexOf("-") + 1, lib.lastIndexOf("."));
-            while (iterator.hasNext()) {
-                Identifier temp = iterator.next();
-                String[] parts = temp.getValue().split(":");
-                if (parts.length == 3 && parts[1].equalsIgnoreCase(libName) && parts[2].equalsIgnoreCase(version) && !temp.getType().equals("cpe")) {
-                    return temp;
-                }
-                if (identifier.getType().equals("cpe")) {
-                    identifier = temp;
-                }
+        FileData fileData = getFileData(dependency.getFileName());
+        FileData bestMatch = fileData;
+        while (iterator.hasNext()) {
+            Identifier identifier = iterator.next();
+            FileData tempData = getFileData(fixIdentifierVersionIfNeeded(identifier, fileData.getVersion()));
+            if (fileData.matches(tempData) || (dependency.getIdentifiers().size() == 1 && identifier.getType().equalsIgnoreCase("maven"))) {
+                return tempData;
+            }
+            if (fileData.partiallyMatches(tempData)) {
+                bestMatch = tempData;
             }
         }
-        catch (Exception ex) {
-            log.warn(ex.getMessage());
+        return bestMatch; //What to do when more than 1 identifier? Currently tries to get the one with right version and libName
+    }
+
+    @Data
+    private class FileData {
+        private final String vendor;
+        private final String name;
+        private final String version;
+        public boolean matches(FileData tempData) {
+            if (tempData == null) {
+                return false;
+            }
+            return tempData.getVersion().equalsIgnoreCase(this.version) && tempData.getName().equalsIgnoreCase(this.name);
         }
-        return identifier; //What to do when more than 1 identifier? Currently tries to get the one with right version and libName
+        public boolean partiallyMatches(FileData tempData) {
+            if (tempData == null) {
+                return false;
+            }
+            return tempData.getVersion().equalsIgnoreCase(this.version) || tempData.getName().equalsIgnoreCase(this.name);
+        }
+    }
+    
+    private FileData getFileData(Identifier identifier) {
+        String type = identifier.getType();
+        String[] parts = identifier.getValue().split(":");
+        switch (type) {
+        case "maven":
+            return new FileData(parts[0], parts[1], parts[2]);
+        case "cpe":
+            return new FileData(parts[2], parts[3], parts[4]);
+        default:
+            return null;
+        }
+    }
+    
+    private FileData getFileData(String fileName) { //Sest esineb faile formaadis jdigidoc-3.8.1-709.jar.
+        fileName = fileName.split(":")[1].trim(); //Removes archive name
+        fileName = removeFileExtension(fileName);
+        int numberOfDashes = StringUtils.countOccurrencesOf(fileName, "-");
+        String name = "";
+        String version = "";
+        if (numberOfDashes == 0) {
+            name = fileName;
+        }
+        else {
+            int dashIndex = getDashIndex(fileName);
+            boolean containsVersion = fileName.substring(dashIndex + 1).matches(".*\\d+.*");
+            name = containsVersion ? fileName.substring(0, dashIndex) : fileName;
+            version = containsVersion ? fileName.substring(dashIndex + 1) : "";
+        }
+        return new FileData("", name, version);
+    }
+    
+    private int getDashIndex(String fileName) {
+        int index = fileName.lastIndexOf("-");
+        if (index < 0) {
+            return fileName.length();
+        }
+        String name = fileName.substring(0, index);
+        int secondToLastDashIndex = name.lastIndexOf("-");
+        if (secondToLastDashIndex > 0) {
+            index = fileName.substring(secondToLastDashIndex + 1, index).matches("(\\d(\\.)?)+") ? secondToLastDashIndex : index;
+        }
+        if (index == secondToLastDashIndex) {
+            return getDashIndex(fileName.substring(0,  index));
+        }
+        else {
+            if (Character.isDigit(fileName.charAt(index + 1))) {
+                return index;
+            }
+            return fileName.length();
+        }
+    }
+
+    private String removeFileExtension(String fileName) {
+        int index = fileName.lastIndexOf(".jar") > 0 ? fileName.lastIndexOf(".jar") : fileName.lastIndexOf(".");
+        return fileName.substring(0, index);
+    }
+
+    private Identifier fixIdentifierVersionIfNeeded(Identifier identifier, String version) {
+        String value = identifier.getValue();
+        if (value.split(":")[2].startsWith("$")) { //Millegi pärast on mõne teegi versioon jäänud ${muutuja}
+            identifier.setValue(value.replace(value.split(":")[2], version));
+        }
+        return identifier;
     }
 
 }

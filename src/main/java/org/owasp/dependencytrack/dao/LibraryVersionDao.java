@@ -163,7 +163,6 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
      * @param appversionid The ID of the ApplicationVersion
      * @param libversionid The ID of the LibraryVersion
      */
-    @SuppressWarnings("unchecked")
     public void addDependency(int appversionid, int libversionid) {
         final Session session = sessionFactory.openSession();
 
@@ -189,7 +188,6 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
      * @param appversionid The ID of the ApplicationVersion
      * @param libversionid The ID of the LibraryVersion
      */
-    @SuppressWarnings("unchecked")
     public void deleteDependency(int appversionid, int libversionid) {
         final Session session = sessionFactory.openSession();
         session.beginTransaction();
@@ -608,7 +606,6 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         return query.list();
     }
     
-    @SuppressWarnings("unchecked")
     public LibraryVersion getLibrary(String libraryName, String libraryVersion, String vendor) {
         final Query query = sessionFactory.getCurrentSession().createQuery(
                 "from LibraryVersion as libver where upper(libver.library.libraryname) "
@@ -619,11 +616,18 @@ public class LibraryVersionDao implements ApplicationEventPublisherAware {
         query.setParameter("vendor", vendor);
         return (LibraryVersion) query.uniqueResult();
     }
+    
+    public ApplicationDependency getApplicationDependency(int appversionid, int libversionid) {
+        final Query query = sessionFactory.getCurrentSession().createQuery(
+                "from ApplicationDependency as dep where dep.applicationVersion.id = :appId and dep.libraryVersion.id = :libId");
+        query.setParameter("appId", appversionid);
+        query.setParameter("libId", libversionid);
+        return (ApplicationDependency) query.uniqueResult();
+    }
 
     @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         this.eventPublisher = applicationEventPublisher;
     }
-
 
 }
