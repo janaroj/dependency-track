@@ -13,6 +13,9 @@
         <encoder>
             <pattern>%date %level [%thread] [%file:%line] %msg%n</pattern>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
     </appender>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -23,11 +26,8 @@
 
     <logger name="org.owasp.dependencytrack" level="INFO" additivity="false">
         <appender-ref ref="FILE" />
-        <appender-ref ref="STDOUT" />
-    </logger>
-    
-     <logger name="org.owasp.dependencytrack.warn" level="WARN" additivity="false">
         <appender-ref ref="WARNFILE" />
+        <appender-ref ref="STDOUT" />
     </logger>
 
     <root level="DEBUG">
