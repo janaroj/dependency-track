@@ -30,6 +30,7 @@ import org.owasp.dependencycheck.dependency.Identifier;
 import org.owasp.dependencytrack.dao.LibraryVersionDao;
 import org.owasp.dependencytrack.model.ApplicationDependency;
 import org.owasp.dependencytrack.model.ApplicationVersion;
+import org.owasp.dependencytrack.model.FileData;
 import org.owasp.dependencytrack.model.Library;
 import org.owasp.dependencytrack.model.LibraryVendor;
 import org.owasp.dependencytrack.model.LibraryVersion;
@@ -157,97 +158,20 @@ public class LibraryVersionService {
         log.info("{}/{} dependencies successfully processed. No known identifiers for others.", count, dependencies.size());
     }
 
-    private FileData getIdentifiedLibrary(Dependency dependency) {
+    private FileData getIdentifiedLibrary(Dependency dependency) { //Probably better logic needed
         Iterator<Identifier> iterator = dependency.getIdentifiers().iterator();
-        FileData fileData = getFileData(dependency.getFileName());
-        FileData bestMatch = fileData;
+        FileData bestMatch = FileData.getFileData(dependency.getFileName());
         while (iterator.hasNext()) {
             Identifier identifier = iterator.next();
-            FileData tempData = getFileData(fixIdentifierVersionIfNeeded(identifier, fileData.getVersion()));
-            if (fileData.matches(tempData) || (dependency.getIdentifiers().size() == 1 && identifier.getType().equalsIgnoreCase("maven"))) {
-                return tempData;
+            if (identifier.getType().equalsIgnoreCase("maven")) {
+                FileData temp = FileData.getFileData(fixIdentifierVersionIfNeeded(identifier, bestMatch.getVersion()));
+                if (temp.getVendor().contains(".")) {
+                    return temp;
+                }
+                bestMatch = temp;
             }
-            if (fileData.partiallyMatches(tempData)) {
-                bestMatch = tempData;
-            }
         }
-        return bestMatch; //What to do when more than 1 identifier? Currently tries to get the one with right version and libName
-    }
-
-    @Data
-    private class FileData {
-        private final String vendor;
-        private final String name;
-        private final String version;
-        public boolean matches(FileData tempData) {
-            if (tempData == null) {
-                return false;
-            }
-            return tempData.getVersion().equalsIgnoreCase(this.version) && tempData.getName().equalsIgnoreCase(this.name);
-        }
-        public boolean partiallyMatches(FileData tempData) {
-            if (tempData == null) {
-                return false;
-            }
-            return tempData.getVersion().equalsIgnoreCase(this.version) || tempData.getName().equalsIgnoreCase(this.name);
-        }
-    }
-    
-    private FileData getFileData(Identifier identifier) {
-        String type = identifier.getType();
-        String[] parts = identifier.getValue().split(":");
-        switch (type) {
-        case "maven":
-            return new FileData(parts[0], parts[1], parts[2]);
-        case "cpe":
-            return new FileData(parts[2], parts[3], parts[4]);
-        default:
-            return null;
-        }
-    }
-    
-    private FileData getFileData(String fileName) { //Sest esineb faile formaadis jdigidoc-3.8.1-709.jar.
-        fileName = fileName.split(":")[1].trim(); //Removes archive name
-        fileName = removeFileExtension(fileName);
-        int numberOfDashes = StringUtils.countOccurrencesOf(fileName, "-");
-        String name = "";
-        String version = "";
-        if (numberOfDashes == 0) {
-            name = fileName;
-        }
-        else {
-            int dashIndex = getDashIndex(fileName);
-            boolean containsVersion = fileName.substring(dashIndex + 1).matches(".*\\d+.*");
-            name = containsVersion ? fileName.substring(0, dashIndex) : fileName;
-            version = containsVersion ? fileName.substring(dashIndex + 1) : "";
-        }
-        return new FileData("", name, version);
-    }
-    
-    private int getDashIndex(String fileName) {
-        int index = fileName.lastIndexOf("-");
-        if (index < 0) {
-            return fileName.length();
-        }
-        String name = fileName.substring(0, index);
-        int secondToLastDashIndex = name.lastIndexOf("-");
-        if (secondToLastDashIndex > 0) {
-            index = fileName.substring(secondToLastDashIndex + 1, index).matches("(\\d(\\.)?)+") ? secondToLastDashIndex : index;
-        }
-        if (index == secondToLastDashIndex) {
-            return getDashIndex(fileName.substring(0,  index));
-        }
-        else {
-            if (Character.isDigit(fileName.charAt(index + 1))) {
-                return index;
-            }
-            return fileName.length();
-        }
-    }
-
-    private String removeFileExtension(String fileName) {
-        int index = fileName.lastIndexOf(".jar") > 0 ? fileName.lastIndexOf(".jar") : fileName.lastIndexOf(".");
-        return fileName.substring(0, index);
+        return bestMatch;
     }
 
     private Identifier fixIdentifierVersionIfNeeded(Identifier identifier, String version) {
